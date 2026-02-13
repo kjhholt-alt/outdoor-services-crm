@@ -1,0 +1,11 @@
+{
+  "projectId": "prj_PbYYTFx1A2OjZ5FYwec4lMgINWKn",
+  "orgId": "team_WHH8PSQuGGbowz5in1WMghJl",
+  "projectName": "outdoor-services-crm",
+  "settings": {
+    "framework": null,
+    "outputDirectory": "dist",
+    "installCommand": "npm install",
+    "buildCommand": "npm run build"
+  }
+}

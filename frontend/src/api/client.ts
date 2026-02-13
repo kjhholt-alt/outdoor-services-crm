@@ -273,35 +273,48 @@ export const importExportApi = {
   },
 };
 
+// --- Demo mode: serve sample data when no backend is configured ---
+import {
+  isDemoMode, demoCategories, demoJobs, demoEstimates,
+  demoInvoices, demoDashboardSummary, demoReminders, demoCustomers,
+} from '../data/demo';
+
+// Helper: try the real API, fall back to demo data on failure
+async function withDemo<T>(apiFn: () => Promise<T>, fallback: T): Promise<T> {
+  if (isDemoMode) return fallback;
+  try { return await apiFn(); } catch { return fallback; }
+}
+
 // Services API (outdoor-specific)
 export const serviceCategoriesApi = {
-  list: async () => {
-    const response = await api.get('/api/categories/');
-    return response.data;
-  },
-  get: async (id: number) => {
-    const response = await api.get(`/api/categories/${id}/`);
-    return response.data;
-  },
+  list: async () => withDemo(
+    async () => (await api.get('/api/categories/')).data,
+    demoCategories,
+  ),
+  get: async (id: number) => withDemo(
+    async () => (await api.get(`/api/categories/${id}/`)).data,
+    demoCategories.find(c => c.id === id),
+  ),
 };
 
 export const servicesApi = {
-  list: async (params?: Record<string, string | number>) => {
-    const response = await api.get('/api/services/', { params });
-    return response.data;
-  },
+  list: async (params?: Record<string, string | number>) => withDemo(
+    async () => (await api.get('/api/services/', { params })).data,
+    demoCategories.flatMap(c => c.services),
+  ),
 };
 
 // Jobs API
+const todayStr = new Date().toISOString().split('T')[0];
 export const jobsApi = {
-  list: async (params?: Record<string, string | number>) => {
-    const response = await api.get('/api/jobs/', { params });
-    return response.data;
-  },
-  get: async (id: number) => {
-    const response = await api.get(`/api/jobs/${id}/`);
-    return response.data;
-  },
+  list: async (params?: Record<string, string | number>) => withDemo(
+    async () => (await api.get('/api/jobs/', { params })).data,
+    params?.status ? demoJobs.filter(j => j.status === params.status) : demoJobs,
+  ),
+  get: async (id: number) => withDemo(
+    async () => (await api.get(`/api/jobs/${id}/`)).data,
+    demoJobs.find(j => j.id === id),
+  ),
   create: async (data: Record<string, unknown>) => {
     const response = await api.post('/api/jobs/', data);
     return response.data;
@@ -310,14 +323,14 @@ export const jobsApi = {
     const response = await api.patch(`/api/jobs/${id}/`, data);
     return response.data;
   },
-  today: async () => {
-    const response = await api.get('/api/jobs/today/');
-    return response.data;
-  },
-  week: async () => {
-    const response = await api.get('/api/jobs/week/');
-    return response.data;
-  },
+  today: async () => withDemo(
+    async () => (await api.get('/api/jobs/today/')).data,
+    demoJobs.filter(j => j.scheduled_date === todayStr),
+  ),
+  week: async () => withDemo(
+    async () => (await api.get('/api/jobs/week/')).data,
+    demoJobs,
+  ),
   start: async (id: number) => {
     const response = await api.post(`/api/jobs/${id}/start/`);
     return response.data;
@@ -334,14 +347,14 @@ export const jobsApi = {
 
 // Estimates API
 export const estimatesApi = {
-  list: async (params?: Record<string, string | number>) => {
-    const response = await api.get('/api/estimates/', { params });
-    return response.data;
-  },
-  get: async (id: number) => {
-    const response = await api.get(`/api/estimates/${id}/`);
-    return response.data;
-  },
+  list: async (params?: Record<string, string | number>) => withDemo(
+    async () => (await api.get('/api/estimates/', { params })).data,
+    demoEstimates,
+  ),
+  get: async (id: number) => withDemo(
+    async () => (await api.get(`/api/estimates/${id}/`)).data,
+    demoEstimates.find(e => e.id === id),
+  ),
   create: async (data: Record<string, unknown>) => {
     const response = await api.post('/api/estimates/', data);
     return response.data;
@@ -358,26 +371,26 @@ export const estimatesApi = {
 
 // Invoices API
 export const invoicesApi = {
-  list: async (params?: Record<string, string | number>) => {
-    const response = await api.get('/api/invoices/', { params });
-    return response.data;
-  },
-  get: async (id: number) => {
-    const response = await api.get(`/api/invoices/${id}/`);
-    return response.data;
-  },
+  list: async (params?: Record<string, string | number>) => withDemo(
+    async () => (await api.get('/api/invoices/', { params })).data,
+    demoInvoices,
+  ),
+  get: async (id: number) => withDemo(
+    async () => (await api.get(`/api/invoices/${id}/`)).data,
+    demoInvoices.find(i => i.id === id),
+  ),
   create: async (data: Record<string, unknown>) => {
     const response = await api.post('/api/invoices/', data);
     return response.data;
   },
-  outstanding: async () => {
-    const response = await api.get('/api/invoices/outstanding/');
-    return response.data;
-  },
-  overdue: async () => {
-    const response = await api.get('/api/invoices/overdue/');
-    return response.data;
-  },
+  outstanding: async () => withDemo(
+    async () => (await api.get('/api/invoices/outstanding/')).data,
+    demoInvoices.filter(i => ['sent', 'partial', 'overdue'].includes(i.status)),
+  ),
+  overdue: async () => withDemo(
+    async () => (await api.get('/api/invoices/overdue/')).data,
+    demoInvoices.filter(i => i.status === 'overdue'),
+  ),
   recordPayment: async (id: number, amount: number) => {
     const response = await api.post(`/api/invoices/${id}/record_payment/`, { amount });
     return response.data;
@@ -386,10 +399,23 @@ export const invoicesApi = {
 
 // Dashboard API (outdoor-specific)
 export const outdoorDashboardApi = {
-  summary: async () => {
-    const response = await api.get('/api/dashboard/summary/');
-    return response.data;
-  },
+  summary: async () => withDemo(
+    async () => (await api.get('/api/dashboard/summary/')).data,
+    demoDashboardSummary,
+  ),
 };
+
+// Override reminders and customers APIs for demo mode
+const _originalRemindersGetOverdue = remindersApi.getOverdue;
+remindersApi.getOverdue = async () => withDemo(
+  _originalRemindersGetOverdue,
+  demoReminders.filter(r => r.is_overdue),
+);
+
+const _originalCustomersList = customersApi.list;
+customersApi.list = async (params?: Record<string, string | number>) => withDemo(
+  () => _originalCustomersList(params),
+  demoCustomers,
+);
 
 export default api;

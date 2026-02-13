@@ -16,7 +16,9 @@ import {
   Moon,
   Sun,
   TreePine,
+  Info,
 } from 'lucide-react';
+import { isDemoMode } from '../../data/demo';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -159,6 +161,16 @@ export function Layout({ children }: LayoutProps) {
             <div className="w-10" />
           </div>
         </header>
+
+        {/* Demo mode banner */}
+        {isDemoMode && (
+          <div className="bg-amber-50 dark:bg-amber-900/30 border-b border-amber-200 dark:border-amber-800 px-4 py-2">
+            <div className="flex items-center gap-2 text-amber-700 dark:text-amber-400 text-sm">
+              <Info className="w-4 h-4 shrink-0" />
+              <span>Preview mode - showing sample data. Connect a backend to manage real customers and jobs.</span>
+            </div>
+          </div>
+        )}
 
         {/* Page content */}
         <main className="p-4 lg:p-6">{children}</main>
