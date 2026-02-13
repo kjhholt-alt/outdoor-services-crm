@@ -4,11 +4,13 @@ import { Upload, Download, FileSpreadsheet, CheckCircle } from 'lucide-react';
 import { importExportApi, regionsApi } from '../api/client';
 import { Button } from '../components/common/Button';
 import { Card, CardHeader, CardContent } from '../components/common/Card';
+import { PageTransition } from '../components/common/PageTransition';
 import { Select } from '../components/common/Input';
 import type { Region } from '../types';
 
 export function ImportExportPage() {
   return (
+    <PageTransition>
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
@@ -24,6 +26,7 @@ export function ImportExportPage() {
         <ExportSection />
       </div>
     </div>
+    </PageTransition>
   );
 }
 

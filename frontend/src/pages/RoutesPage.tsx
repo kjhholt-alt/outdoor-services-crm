@@ -10,6 +10,7 @@ import {
 import { routesApi, customersApi } from '../api/client';
 import { Button } from '../components/common/Button';
 import { Card, CardContent } from '../components/common/Card';
+import { PageTransition } from '../components/common/PageTransition';
 import { Modal } from '../components/common/Modal';
 import { Input } from '../components/common/Input';
 import type { Route, CustomerListItem, PaginatedResponse } from '../types';
@@ -24,6 +25,7 @@ export function RoutesPage() {
   });
 
   return (
+    <PageTransition>
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
@@ -147,6 +149,7 @@ export function RoutesPage() {
         />
       )}
     </div>
+    </PageTransition>
   );
 }
 

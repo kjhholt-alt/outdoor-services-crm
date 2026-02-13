@@ -2,11 +2,14 @@ import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import {
-  Receipt, Plus, AlertCircle, Clock,
+  Receipt, Plus, AlertCircle, Clock, Eye, Download,
 } from 'lucide-react';
-import { invoicesApi } from '../api/client';
-import { Card } from '../components/common/Card';
-import type { Invoice, InvoiceStatus } from '../types';
+import { invoicesApi } from '../api/client.ts';
+import { Card } from '../components/common/Card.tsx';
+import { PageTransition } from '../components/common/PageTransition';
+import { InvoicePreview } from '../components/invoice/InvoicePreview.tsx';
+import { generateInvoicePDF } from '../lib/pdf.ts';
+import type { Invoice, InvoiceStatus } from '../types/index.ts';
 
 const STATUS_CONFIG: Record<InvoiceStatus, { label: string; color: string; bg: string }> = {
   draft: { label: 'Draft', color: 'text-gray-600 dark:text-gray-400', bg: 'bg-gray-100 dark:bg-gray-900/30' },
@@ -19,6 +22,7 @@ const STATUS_CONFIG: Record<InvoiceStatus, { label: string; color: string; bg: s
 
 export function InvoicesPage() {
   const [view, setView] = useState<'all' | 'outstanding' | 'overdue'>('all');
+  const [previewInvoice, setPreviewInvoice] = useState<Invoice | null>(null);
 
   const { data: allData } = useQuery({
     queryKey: ['invoices'],
@@ -44,6 +48,7 @@ export function InvoicesPage() {
     : (overdueData ?? []);
 
   return (
+    <PageTransition>
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
@@ -107,18 +112,34 @@ export function InvoicesPage() {
                       </span>
                     </div>
                   </div>
-                  <div className="text-right shrink-0">
-                    <span className="text-lg font-bold text-green-700 dark:text-green-400">
-                      ${Number(inv.total).toFixed(2)}
-                    </span>
-                    {balance > 0 && inv.status !== 'paid' && (
-                      <p className="text-xs text-red-500">
-                        ${balance.toFixed(2)} due
-                      </p>
-                    )}
-                    {inv.status === 'paid' && (
-                      <p className="text-xs text-green-500">Paid in full</p>
-                    )}
+                  <div className="flex items-center gap-2 shrink-0">
+                    <button
+                      onClick={() => setPreviewInvoice(inv)}
+                      className="p-2 rounded-lg text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                      title="Preview invoice"
+                    >
+                      <Eye className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => generateInvoicePDF(inv)}
+                      className="p-2 rounded-lg text-gray-400 hover:text-green-600 dark:hover:text-green-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                      title="Download PDF"
+                    >
+                      <Download className="w-4 h-4" />
+                    </button>
+                    <div className="text-right ml-2">
+                      <span className="text-lg font-bold text-green-700 dark:text-green-400">
+                        ${Number(inv.total).toFixed(2)}
+                      </span>
+                      {balance > 0 && inv.status !== 'paid' && (
+                        <p className="text-xs text-red-500">
+                          ${balance.toFixed(2)} due
+                        </p>
+                      )}
+                      {inv.status === 'paid' && (
+                        <p className="text-xs text-green-500">Paid in full</p>
+                      )}
+                    </div>
                   </div>
                 </div>
               </Card>
@@ -133,6 +154,16 @@ export function InvoicesPage() {
           </Card>
         )}
       </div>
+
+      {/* Invoice Preview Modal */}
+      {previewInvoice && (
+        <InvoicePreview
+          invoice={previewInvoice}
+          isOpen={true}
+          onClose={() => setPreviewInvoice(null)}
+        />
+      )}
     </div>
+    </PageTransition>
   );
 }

@@ -3,6 +3,7 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { Calendar, ChevronRight, Filter } from 'lucide-react';
 import { activitiesApi } from '../api/client';
 import { Card, CardHeader, CardContent } from '../components/common/Card';
+import { PageTransition } from '../components/common/PageTransition';
 import { Select } from '../components/common/Input';
 import type { Activity, ActivityType, PaginatedResponse } from '../types';
 
@@ -32,6 +33,7 @@ export function ActivitiesPage() {
   });
 
   return (
+    <PageTransition>
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
@@ -169,5 +171,6 @@ export function ActivitiesPage() {
         </CardContent>
       </Card>
     </div>
+    </PageTransition>
   );
 }

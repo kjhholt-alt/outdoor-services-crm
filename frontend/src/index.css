@@ -208,3 +208,98 @@ button, a, input, select, textarea {
 .dark .leaflet-marker-pane img {
   filter: brightness(1.2);
 }
+
+/* FullCalendar dark mode overrides */
+.dark .fc {
+  --fc-border-color: #374151;
+  --fc-page-bg-color: #1f2937;
+  --fc-neutral-bg-color: #111827;
+  --fc-list-event-hover-bg-color: #374151;
+  --fc-today-bg-color: rgba(22, 163, 74, 0.1);
+  --fc-event-text-color: #fff;
+}
+
+.dark .fc .fc-col-header-cell-cushion,
+.dark .fc .fc-daygrid-day-number,
+.dark .fc .fc-timegrid-slot-label {
+  color: #d1d5db;
+}
+
+.dark .fc .fc-button-primary {
+  background-color: #374151;
+  border-color: #4b5563;
+  color: #d1d5db;
+}
+
+.dark .fc .fc-button-primary:hover {
+  background-color: #4b5563;
+}
+
+.dark .fc .fc-button-primary:not(:disabled).fc-button-active {
+  background-color: #16a34a;
+  border-color: #16a34a;
+}
+
+.dark .fc .fc-toolbar-title {
+  color: #f3f4f6;
+}
+
+.dark .fc-theme-standard td,
+.dark .fc-theme-standard th {
+  border-color: #374151;
+}
+
+.dark .fc .fc-daygrid-day.fc-day-today {
+  background-color: rgba(22, 163, 74, 0.1);
+}
+
+.dark .fc .fc-timegrid-now-indicator-line {
+  border-color: #16a34a;
+}
+
+.fc .fc-event {
+  border-radius: 4px;
+  padding: 2px 4px;
+  font-size: 0.75rem;
+  border: none;
+}
+
+.fc .fc-daygrid-event {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Page transition smoothing */
+.page-enter {
+  opacity: 0;
+  transform: translateY(12px);
+}
+
+/* Smoother button transitions */
+.btn {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Active nav link accent */
+.nav-link.active {
+  border-left: 3px solid #16a34a;
+  padding-left: 13px;
+}
+
+/* Toast customization */
+[data-sonner-toaster] [data-sonner-toast] {
+  font-family: inherit;
+}
+
+/* Skeleton shimmer effect */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.skeleton-shimmer {
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+}

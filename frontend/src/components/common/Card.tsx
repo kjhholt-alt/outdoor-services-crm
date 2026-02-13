@@ -1,4 +1,5 @@
 import React from 'react';
+import { motion } from 'framer-motion';
 
 interface CardProps {
   children: React.ReactNode;
@@ -8,12 +9,14 @@ interface CardProps {
 
 export function Card({ children, className = '', onClick }: CardProps) {
   return (
-    <div
-      className={`card p-4 ${onClick ? 'cursor-pointer hover:shadow-md transition-shadow' : ''} ${className}`}
+    <motion.div
+      className={`card p-4 ${onClick ? 'cursor-pointer' : ''} ${className}`}
       onClick={onClick}
+      whileHover={onClick ? { scale: 1.01, boxShadow: '0 4px 12px rgba(0,0,0,0.1)' } : undefined}
+      transition={{ duration: 0.15 }}
     >
       {children}
-    </div>
+    </motion.div>
   );
 }
 

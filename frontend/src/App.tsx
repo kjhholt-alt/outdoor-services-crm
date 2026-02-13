@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { ToastProvider } from './components/notifications/ToastProvider';
 import { Layout } from './components/common/Layout';
 import { DashboardPage } from './pages/DashboardPage';
 import { CustomersPage } from './pages/CustomersPage';
@@ -14,6 +15,7 @@ import { RemindersPage } from './pages/RemindersPage';
 import { ActivitiesPage } from './pages/ActivitiesPage';
 import { RoutesPage } from './pages/RoutesPage';
 import { ImportExportPage } from './pages/ImportExportPage';
+import { CrewPage } from './pages/CrewPage';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -44,10 +46,12 @@ function App() {
             <Route path="/activities" element={<ActivitiesPage />} />
             <Route path="/routes" element={<RoutesPage />} />
             <Route path="/import" element={<ImportExportPage />} />
+            <Route path="/crew" element={<CrewPage />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </Layout>
       </BrowserRouter>
+      <ToastProvider />
     </QueryClientProvider>
   );
 }

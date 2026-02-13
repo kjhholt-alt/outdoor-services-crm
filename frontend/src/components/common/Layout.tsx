@@ -11,6 +11,7 @@ import {
   MapPin,
   Upload,
   BarChart3,
+  Smartphone,
   Menu,
   X,
   Moon,
@@ -35,6 +36,7 @@ const navItems = [
   { path: '/reminders', icon: Bell, label: 'Reminders' },
   { path: '/reports', icon: BarChart3, label: 'Reports' },
   { path: '/import', icon: Upload, label: 'Import/Export' },
+  { path: '/crew', icon: Smartphone, label: 'Crew View' },
 ];
 
 export function Layout({ children }: LayoutProps) {
@@ -53,6 +55,11 @@ export function Layout({ children }: LayoutProps) {
     }
     localStorage.setItem('darkMode', String(darkMode));
   }, [darkMode]);
+
+  const isCrew = location.pathname === '/crew';
+  if (isCrew) {
+    return <>{children}</>;
+  }
 
   const toggleDarkMode = () => {
     setDarkMode(!darkMode);
@@ -109,6 +116,7 @@ export function Layout({ children }: LayoutProps) {
                 key={item.path}
                 to={item.path}
                 className={`nav-link ${isActive ? 'active' : ''}`}
+                style={isActive ? { borderLeft: '3px solid #16a34a', paddingLeft: '13px' } : undefined}
                 onClick={() => setSidebarOpen(false)}
               >
                 <Icon className="w-5 h-5" />

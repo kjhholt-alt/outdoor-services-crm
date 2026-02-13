@@ -1,4 +1,5 @@
 import React from 'react';
+import { motion } from 'framer-motion';
 import { Loader2 } from 'lucide-react';
 
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
@@ -31,12 +32,17 @@ export function Button({
   children,
   disabled,
   className = '',
+  onDrag: _onDrag,
+  onDragStart: _onDragStart,
+  onDragEnd: _onDragEnd,
+  onAnimationStart: _onAnimationStart,
   ...props
 }: ButtonProps) {
   return (
-    <button
+    <motion.button
       className={`${variants[variant]} ${sizes[size]} ${className}`}
       disabled={disabled || isLoading}
+      whileTap={{ scale: 0.97 }}
       {...props}
     >
       {isLoading ? (
@@ -46,6 +52,6 @@ export function Button({
       ) : null}
       {children}
       {rightIcon && !isLoading && <span className="ml-2">{rightIcon}</span>}
-    </button>
+    </motion.button>
   );
 }

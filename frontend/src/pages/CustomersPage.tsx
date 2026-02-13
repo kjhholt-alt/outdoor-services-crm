@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { customersApi, regionsApi } from '../api/client';
 import { Button } from '../components/common/Button';
+import { PageTransition } from '../components/common/PageTransition';
 import { Select } from '../components/common/Input';
 import { FAB } from '../components/common/FAB';
 import type { CustomerListItem, Region, PaginatedResponse } from '../types';
@@ -75,6 +76,7 @@ export function CustomersPage() {
   const totalPages = customers ? Math.ceil(customers.count / 25) : 0;
 
   return (
+    <PageTransition>
     <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -331,5 +333,6 @@ export function CustomersPage() {
         ]}
       />
     </div>
+    </PageTransition>
   );
 }

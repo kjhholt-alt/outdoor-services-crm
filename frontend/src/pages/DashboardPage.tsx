@@ -6,6 +6,8 @@ import {
 } from 'lucide-react';
 import { outdoorDashboardApi, jobsApi, remindersApi } from '../api/client';
 import { Card, CardHeader, CardContent } from '../components/common/Card';
+import { WeatherWidget } from '../components/weather/WeatherWidget.tsx';
+import { PageTransition } from '../components/common/PageTransition';
 import type { OutdoorDashboardSummary, Job, Reminder } from '../types';
 
 export function DashboardPage() {
@@ -25,6 +27,7 @@ export function DashboardPage() {
   });
 
   return (
+    <PageTransition>
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
@@ -93,6 +96,9 @@ export function DashboardPage() {
           </div>
         </Card>
       )}
+
+      {/* Weather Forecast */}
+      <WeatherWidget />
 
       {/* Main Content */}
       <div className="grid lg:grid-cols-2 gap-6">
@@ -191,6 +197,7 @@ export function DashboardPage() {
         </Card>
       </div>
     </div>
+    </PageTransition>
   );
 }
 

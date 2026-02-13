@@ -9,9 +9,11 @@ import {
   Phone,
   ChevronRight,
 } from 'lucide-react';
+import { toast } from 'sonner';
 import { remindersApi } from '../api/client';
 import { Button } from '../components/common/Button';
 import { Card } from '../components/common/Card';
+import { PageTransition } from '../components/common/PageTransition';
 import type { Reminder, DashboardSummary } from '../types';
 
 export function RemindersPage() {
@@ -49,6 +51,10 @@ export function RemindersPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['reminders'] });
       queryClient.invalidateQueries({ queryKey: ['dashboard-summary'] });
+      toast.success('Reminder completed!');
+    },
+    onError: () => {
+      toast.error('Failed to complete reminder');
     },
   });
 
@@ -58,6 +64,10 @@ export function RemindersPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['reminders'] });
       queryClient.invalidateQueries({ queryKey: ['dashboard-summary'] });
+      toast.success('Reminder snoozed');
+    },
+    onError: () => {
+      toast.error('Failed to snooze reminder');
     },
   });
 
@@ -71,6 +81,7 @@ export function RemindersPage() {
   ];
 
   return (
+    <PageTransition>
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
@@ -149,6 +160,7 @@ export function RemindersPage() {
         )}
       </Card>
     </div>
+    </PageTransition>
   );
 }
 

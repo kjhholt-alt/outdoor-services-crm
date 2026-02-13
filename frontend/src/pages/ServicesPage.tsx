@@ -6,6 +6,7 @@ import {
 import { useState } from 'react';
 import { serviceCategoriesApi } from '../api/client';
 import { Card } from '../components/common/Card';
+import { PageTransition } from '../components/common/PageTransition';
 import type { ServiceCategory, Service } from '../types';
 
 const ICON_MAP: Record<string, React.ElementType> = {
@@ -51,6 +52,7 @@ export function ServicesPage() {
   const MONTHS = ['', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
   return (
+    <PageTransition>
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Services</h1>
@@ -139,5 +141,6 @@ export function ServicesPage() {
         )}
       </div>
     </div>
+    </PageTransition>
   );
 }

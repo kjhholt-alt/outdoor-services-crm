@@ -5,6 +5,7 @@ import {
 } from 'lucide-react';
 import { estimatesApi } from '../api/client';
 import { Card } from '../components/common/Card';
+import { PageTransition } from '../components/common/PageTransition';
 import type { Estimate, EstimateStatus } from '../types';
 
 const STATUS_CONFIG: Record<EstimateStatus, { label: string; color: string; bg: string }> = {
@@ -24,6 +25,7 @@ export function EstimatesPage() {
   const estimates: Estimate[] = data?.results ?? data ?? [];
 
   return (
+    <PageTransition>
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
@@ -91,5 +93,6 @@ export function EstimatesPage() {
         )}
       </div>
     </div>
+    </PageTransition>
   );
 }
