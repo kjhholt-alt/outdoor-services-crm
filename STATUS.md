@@ -1,6 +1,6 @@
 # Outdoor CRM (AATOS) - Status
 
-**Last Updated**: 2026-02-13 ~1:30 AM CST
+**Last Updated**: 2026-02-13 ~1:45 AM CST
 
 ## FULLY DEPLOYED - Both Frontend & Backend Live
 
@@ -63,13 +63,28 @@ All 8 features implemented, built, deployed, and verified with Puppeteer:
 - Respects dark mode
 - Helper hooks: showSuccess(), showError(), showWarning(), showInfo()
 
-### 8. UI Overhaul (Framer Motion)
+### 8. UI Overhaul (Framer Motion) + Form Pages + Market Leads
 - Page transitions (fade-in-up) on all 14 pages
 - Card hover animations, button press feedback (whileTap scale)
 - Modal enter/exit animations (backdrop fade + slide-up)
 - Skeleton loading components (card, text, chart variants)
 - Sidebar active state: green left border accent
 - Refined dark mode with smoother transitions
+
+### 9. Form Pages (Job, Estimate, Invoice)
+- `/jobs/new` — Schedule New Job form with customer/service dropdowns, auto-fill price/duration, date/time, assigned crew, notes
+- `/estimates/new` — New Estimate form with dynamic line items (add/remove), running total, frequency, valid-until date
+- `/invoices/new` — New Invoice form with customer picker, attach completed jobs, live tax calculator (subtotal/tax/total), auto-set due date 15 days out
+- All forms use the same Card/Input/Button pattern as CustomerFormPage
+- Toast notifications on success/error
+
+### 10. Market Leads / Lead Generator (/leads)
+- 12 demo leads for Davenport/Bettendorf/QC area — new businesses, new builds, HOAs, municipal RFPs
+- Each lead has: business name, contact name, phone, email, address, type (Residential/Commercial/HOA/Municipal), service category, lead source, hot score (1-5 stars), notes, status
+- Stats dashboard: Total Leads, New/Uncontacted, Hot Leads, Est. Pipeline Value
+- Search + filter by status, type, sort by hot score/date/name
+- Call (tel:), Email (mailto:), Convert to Customer buttons per lead
+- Lead sources: Google Maps new listings, building permits, referrals, Yelp, Nextdoor, Chamber of Commerce, municipal RFPs, cold outreach, Facebook ads
 
 ## New Dependencies Added
 
@@ -88,13 +103,15 @@ All 8 features implemented, built, deployed, and verified with Puppeteer:
 
 ## Files Changed
 
-- **30 new files** created (components, hooks, types, data, lib)
-- **19 files modified** (all pages + common components)
-- **49 total files** in the commit (3,394 insertions, 169 deletions)
+- **34 new files** created (components, hooks, types, data, lib, form pages, leads)
+- **21 files modified** (all pages + common components + App.tsx + Layout.tsx)
+- Total: 4,538 insertions across 2 commits
 
 ## What's Working
 
-- **Frontend** (Vercel): All 14 pages render correctly, SPA routing, dark mode, mobile responsive
+- **Frontend** (Vercel): All 16 pages render correctly, SPA routing, dark mode, mobile responsive
+- **Form Pages**: /jobs/new, /estimates/new, /invoices/new all work — no more redirect-to-home
+- **Market Leads**: /leads page with 12 QC-area demo leads, search/filter, call/email/convert buttons
 - **Backend** (Railway): Django 5 + DRF, PostgreSQL, gunicorn — health check returns 200
 - **Service Catalog**: 5 categories, 24 services seeded from management command
 - **API Endpoints**: categories, services, jobs, estimates, invoices, dashboard summary — all working
