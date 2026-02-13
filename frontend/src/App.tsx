@@ -16,6 +16,10 @@ import { ActivitiesPage } from './pages/ActivitiesPage';
 import { RoutesPage } from './pages/RoutesPage';
 import { ImportExportPage } from './pages/ImportExportPage';
 import { CrewPage } from './pages/CrewPage';
+import { JobFormPage } from './pages/JobFormPage';
+import { EstimateFormPage } from './pages/EstimateFormPage';
+import { InvoiceFormPage } from './pages/InvoiceFormPage';
+import { LeadsPage } from './pages/LeadsPage';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -34,13 +38,17 @@ function App() {
           <Routes>
             <Route path="/" element={<DashboardPage />} />
             <Route path="/jobs" element={<JobsPage />} />
+            <Route path="/jobs/new" element={<JobFormPage />} />
             <Route path="/customers" element={<CustomersPage />} />
             <Route path="/customers/new" element={<CustomerFormPage />} />
             <Route path="/customers/:id/edit" element={<CustomerFormPage />} />
             <Route path="/customers/:id" element={<CustomerDetailPage />} />
             <Route path="/services" element={<ServicesPage />} />
             <Route path="/estimates" element={<EstimatesPage />} />
+            <Route path="/estimates/new" element={<EstimateFormPage />} />
             <Route path="/invoices" element={<InvoicesPage />} />
+            <Route path="/invoices/new" element={<InvoiceFormPage />} />
+            <Route path="/leads" element={<LeadsPage />} />
             <Route path="/reports" element={<ReportsPage />} />
             <Route path="/reminders" element={<RemindersPage />} />
             <Route path="/activities" element={<ActivitiesPage />} />
