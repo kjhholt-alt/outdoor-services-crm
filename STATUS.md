@@ -1,53 +1,56 @@
 # Outdoor CRM (AATOS) - Status
 
-**Last Updated**: 2026-02-13 ~3:00 AM
+**Last Updated**: 2026-02-13 ~6:40 AM
+
+## FULLY DEPLOYED - Both Frontend & Backend Live
+
+| Component | Status | URL |
+|-----------|--------|-----|
+| Frontend | LIVE | https://outdoor-services-crm.vercel.app |
+| Backend | LIVE | https://motivated-vitality-production.up.railway.app |
+| Health Check | PASSING | https://motivated-vitality-production.up.railway.app/health/ |
+| GitHub | LIVE | https://github.com/kjhholt-alt/outdoor-services-crm |
 
 ## What's Working
 
-- **Frontend LIVE**: https://outdoor-services-crm.vercel.app
-  - Full CRM dashboard with demo data (8 customers, 9 jobs, 5 invoices)
-  - All pages working: Dashboard, Jobs, Customers, Services, Estimates, Invoices, Routes, Reminders, Reports, Import/Export
-  - SPA routing works (direct URL navigation)
-  - Dark mode toggle
-  - Demo mode banner shows when no backend connected
-  - Mobile responsive with sidebar drawer
-
-- **GitHub**: https://github.com/kjhholt-alt/outdoor-services-crm
-  - All code committed and pushed (2 commits on main)
-
-- **Backend Code Complete** (not deployed yet):
-  - Django 5 + DRF API with: ServiceCategory, Service, Job, Estimate, Invoice models
-  - Job workflow: scheduled -> in_progress -> completed/cancelled/rescheduled/weather_delay
-  - Estimate -> Job conversion
-  - Invoice payment tracking
-  - Dashboard summary endpoint
-  - Health check endpoint
-  - Seed data management command (outdoor services catalog)
-  - Railway deployment config (railway.json)
+- **Frontend** (Vercel): All 10 pages render correctly, SPA routing, dark mode, mobile responsive
+- **Backend** (Railway): Django 5 + DRF, PostgreSQL, gunicorn — health check returns 200
+- **Service Catalog**: 5 categories, 24 services seeded from management command
+  - Lawn Care (6 services), Landscaping (5), Snow Removal (5), Cleanups (5), Additional Services (3)
+- **API Endpoints**: categories, services, jobs, estimates, invoices, dashboard summary — all working
+- **Frontend connected to backend**: `VITE_API_URL` set on Vercel, builds pull real data
+- **Demo data fallback**: If backend goes down, frontend shows sample data automatically
 
 ## What's Not Working / Pending
 
-- **Backend not deployed**: Railway CLI requires interactive login (can't do in Claude Code). See `DEPLOY.md` for one-command setup guide.
 - **No custom domain yet**: Currently on `outdoor-services-crm.vercel.app`
-- **Auth not connected**: JWT auth endpoints exist in backend but frontend doesn't enforce login (fine for now)
+- **Auth not enforced**: JWT auth endpoints exist in backend but frontend doesn't require login
+- **No real customer data yet**: Service catalog is seeded, but customers/jobs/invoices are empty (need to be created or imported)
 
 ## Next Steps
 
-1. **Deploy backend to Railway** (follow DEPLOY.md - just needs `railway login` then `railway up`)
-2. Set `VITE_API_URL` on Vercel to point to Railway backend
-3. Redeploy frontend to switch from demo data to real data
-4. Add custom domain if desired
-5. Import real customer data via Import/Export page
+1. Import real customer data via the Import/Export page
+2. Create first jobs and invoices
+3. Add custom domain if desired
+4. Enable JWT auth if multi-user access needed
 
 ## Architecture
 
 ```
-Frontend (Vercel)           Backend (Railway - pending)
-React 19 + Vite             Django 5 + DRF
-Tailwind CSS                PostgreSQL
-React Query                 gunicorn
-                            WhiteNoise (static files)
+Frontend (Vercel)                    Backend (Railway)
+React 19 + Vite + TypeScript        Django 5 + DRF
+Tailwind CSS                         PostgreSQL (Railway addon)
+React Query                          gunicorn + WhiteNoise
+outdoor-services-crm.vercel.app      motivated-vitality-production.up.railway.app
 ```
+
+## Railway Project
+
+- **Project**: beautiful-quietude
+- **Service**: motivated-vitality
+- **Database**: PostgreSQL (auto-provisioned)
+- **Environment**: production
+- **Start command**: migrate → collectstatic → seed_services → gunicorn
 
 ## Branding
 
