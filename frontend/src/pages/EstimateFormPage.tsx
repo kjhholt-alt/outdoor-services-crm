@@ -55,7 +55,26 @@ export function EstimateFormPage() {
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
   ) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    setFormData(prev => {
+      const updated = { ...prev, [name]: value };
+
+      // Auto-generate title when customer is selected and title is empty
+      if (name === 'customer' && value && !prev.title) {
+        const cust = customers.find(c => c.id === parseInt(value, 10));
+        if (cust) {
+          updated.title = `Service Estimate — ${cust.business_name}`;
+        }
+      }
+
+      // Auto-set valid_until to 30 days from now when not already set
+      if (name === 'customer' && value && !prev.valid_until) {
+        const d = new Date();
+        d.setDate(d.getDate() + 30);
+        updated.valid_until = d.toISOString().split('T')[0];
+      }
+
+      return updated;
+    });
   };
 
   const handleLineItemChange = (idx: number, field: keyof LineItem, value: string) => {

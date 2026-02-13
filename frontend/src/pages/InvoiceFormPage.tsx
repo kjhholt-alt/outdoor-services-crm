@@ -72,10 +72,20 @@ export function InvoiceFormPage() {
     const { name, value } = e.target;
     setFormData(prev => {
       const updated = { ...prev, [name]: value };
-      // Auto-set due date when issue date changes
-      if (name === 'issued_date' && !prev.due_date) {
+
+      // Auto-set due date when issue date changes (always update if user hasn't manually set one)
+      if (name === 'issued_date') {
         updated.due_date = setDefaultDueDate(value);
       }
+
+      // Auto-fill notes with payment terms when customer is selected
+      if (name === 'customer' && value && !prev.notes) {
+        const cust = customers.find(c => c.id === parseInt(value, 10));
+        if (cust) {
+          updated.notes = `Payment due within 15 days of invoice date. Please make checks payable to All Around Town Outdoor Services.`;
+        }
+      }
+
       return updated;
     });
   };

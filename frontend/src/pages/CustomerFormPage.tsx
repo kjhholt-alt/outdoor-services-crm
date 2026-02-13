@@ -1,18 +1,51 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { ArrowLeft, Save } from 'lucide-react';
+import { toast } from 'sonner';
 import { customersApi, regionsApi } from '../api/client';
 import { Button } from '../components/common/Button';
 import { Card, CardHeader, CardContent } from '../components/common/Card';
 import { Input, TextArea, Select } from '../components/common/Input';
 import type { Customer, Region } from '../types';
 
+// Zip-to-city/state lookup for the QC area — auto-fills city and state from zip code
+const ZIP_LOOKUP: Record<string, { city: string; state: string }> = {
+  '52748': { city: 'Eldridge', state: 'IA' },
+  '52753': { city: 'LeClaire', state: 'IA' },
+  '52722': { city: 'Bettendorf', state: 'IA' },
+  '52801': { city: 'Davenport', state: 'IA' },
+  '52802': { city: 'Davenport', state: 'IA' },
+  '52803': { city: 'Davenport', state: 'IA' },
+  '52804': { city: 'Davenport', state: 'IA' },
+  '52806': { city: 'Davenport', state: 'IA' },
+  '52807': { city: 'Davenport', state: 'IA' },
+  '52809': { city: 'Davenport', state: 'IA' },
+  '52761': { city: 'Muscatine', state: 'IA' },
+  '52768': { city: 'Princeton', state: 'IA' },
+  '52747': { city: 'Donahue', state: 'IA' },
+  '61201': { city: 'Rock Island', state: 'IL' },
+  '61244': { city: 'East Moline', state: 'IL' },
+  '61265': { city: 'Moline', state: 'IL' },
+  '61264': { city: 'Milan', state: 'IL' },
+  '52728': { city: 'Blue Grass', state: 'IA' },
+  '52726': { city: 'Bettendorf', state: 'IA' },
+  '52732': { city: 'Clinton', state: 'IA' },
+  '52745': { city: 'Dixon', state: 'IA' },
+  '52750': { city: 'Grand Mound', state: 'IA' },
+  '52756': { city: 'Long Grove', state: 'IA' },
+  '52765': { city: 'New Liberty', state: 'IA' },
+  '52777': { city: 'Walcott', state: 'IA' },
+  '52778': { city: 'Wheatland', state: 'IA' },
+};
+
 export function CustomerFormPage() {
   const { id } = useParams<{ id: string }>();
+  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const isEditing = id && id !== 'new';
+  const isFromLead = searchParams.get('from_lead') === 'true';
 
   const [formData, setFormData] = useState({
     business_name: '',
@@ -40,6 +73,28 @@ export function CustomerFormPage() {
     queryFn: regionsApi.list,
   });
 
+  // Pre-fill from URL search params (when converting a lead to customer)
+  useEffect(() => {
+    if (isFromLead && !isEditing) {
+      setFormData({
+        business_name: searchParams.get('business_name') || '',
+        bill_to_address: searchParams.get('bill_to_address') || '',
+        city: searchParams.get('city') || '',
+        state: searchParams.get('state') || '',
+        zip_code: searchParams.get('zip_code') || '',
+        primary_contact: searchParams.get('primary_contact') || '',
+        main_email: searchParams.get('main_email') || '',
+        main_phone: searchParams.get('main_phone') || '',
+        secondary_phone: '',
+        fax: '',
+        fleet_description: searchParams.get('fleet_description') || '',
+        region: '',
+      });
+      toast.info('Form pre-filled from lead data. Review and save.');
+    }
+  }, [isFromLead, isEditing, searchParams]);
+
+  // Pre-fill from existing customer (edit mode)
   useEffect(() => {
     if (customer) {
       setFormData({
@@ -63,7 +118,11 @@ export function CustomerFormPage() {
     mutationFn: (data: Record<string, unknown>) => customersApi.create(data),
     onSuccess: (newCustomer) => {
       queryClient.invalidateQueries({ queryKey: ['customers'] });
+      toast.success('Customer created!');
       navigate(`/customers/${newCustomer.id}`);
+    },
+    onError: () => {
+      toast.error('Failed to create customer');
     },
   });
 
@@ -73,7 +132,11 @@ export function CustomerFormPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['customers'] });
       queryClient.invalidateQueries({ queryKey: ['customer', id] });
+      toast.success('Customer updated!');
       navigate(`/customers/${id}`);
+    },
+    onError: () => {
+      toast.error('Failed to update customer');
     },
   });
 
@@ -81,7 +144,30 @@ export function CustomerFormPage() {
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
   ) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    setFormData((prev) => {
+      const updated = { ...prev, [name]: value };
+
+      // Auto-fill city and state from zip code
+      if (name === 'zip_code' && value.length === 5) {
+        const match = ZIP_LOOKUP[value];
+        if (match) {
+          updated.city = match.city;
+          updated.state = match.state;
+        }
+      }
+
+      // Auto-fill state when city is typed (for common QC cities)
+      if (name === 'city') {
+        const cityLower = value.toLowerCase().trim();
+        if (['davenport', 'bettendorf', 'leclaire', 'le claire', 'eldridge', 'walcott', 'blue grass', 'princeton', 'muscatine', 'clinton', 'long grove', 'dixon'].includes(cityLower)) {
+          updated.state = 'IA';
+        } else if (['rock island', 'moline', 'east moline', 'milan', 'silvis'].includes(cityLower)) {
+          updated.state = 'IL';
+        }
+      }
+
+      return updated;
+    });
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -113,9 +199,14 @@ export function CustomerFormPage() {
         <Button variant="ghost" onClick={() => navigate(-1)} className="p-2">
           <ArrowLeft className="w-5 h-5" />
         </Button>
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-          {isEditing ? 'Edit Customer' : 'Add New Customer'}
-        </h1>
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+            {isEditing ? 'Edit Customer' : 'Add New Customer'}
+          </h1>
+          {isFromLead && (
+            <p className="text-sm text-blue-600 dark:text-blue-400">Pre-filled from lead — review and save</p>
+          )}
+        </div>
       </div>
 
       <form onSubmit={handleSubmit}>
@@ -174,7 +265,7 @@ export function CustomerFormPage() {
                 name="zip_code"
                 value={formData.zip_code}
                 onChange={handleChange}
-                placeholder="ZIP"
+                placeholder="ZIP (auto-fills city/state)"
               />
             </div>
           </CardContent>
@@ -235,11 +326,11 @@ export function CustomerFormPage() {
           <CardHeader title="Additional Information" />
           <CardContent>
             <TextArea
-              label="Fleet Description"
+              label="Notes / Services Needed"
               name="fleet_description"
               value={formData.fleet_description}
               onChange={handleChange}
-              placeholder="Describe the customer's fleet, equipment, or other relevant details..."
+              placeholder="Services the customer needs, equipment details, special instructions..."
               rows={4}
             />
           </CardContent>

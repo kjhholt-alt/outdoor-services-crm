@@ -69,6 +69,21 @@ export function JobFormPage() {
         }));
       }
     }
+
+    // Auto-fill notes with customer address when customer is selected
+    if (name === 'customer' && value) {
+      const cust = customers.find(c => c.id === parseInt(value, 10));
+      if (cust && !formData.notes) {
+        const addr = [cust.city, cust.state].filter(Boolean).join(', ');
+        if (addr) {
+          setFormData(prev => ({
+            ...prev,
+            customer: value,
+            notes: prev.notes || `Customer: ${cust.business_name}${addr ? ` — ${addr}` : ''}`,
+          }));
+        }
+      }
+    }
   };
 
   const handleSubmit = (e: React.FormEvent) => {
