@@ -1,0 +1,210 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Base styles */
+html {
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  @apply bg-gray-50 text-gray-900;
+  min-height: 100vh;
+}
+
+.dark body {
+  @apply bg-gray-900 text-gray-100;
+}
+
+/* Ensure minimum touch target size for iPad/mobile */
+button, a, input, select, textarea {
+  min-height: 48px;
+}
+
+/* Card component */
+.card {
+  @apply bg-white rounded-lg shadow-sm border border-gray-200 p-4;
+}
+
+.dark .card {
+  @apply bg-gray-800 border-gray-700;
+}
+
+/* Button base */
+.btn {
+  @apply inline-flex items-center justify-center px-4 py-2 text-sm font-medium rounded-lg transition-all duration-150 cursor-pointer border-none;
+  min-height: 48px;
+}
+
+.btn:disabled {
+  @apply opacity-50 cursor-not-allowed;
+}
+
+.btn-primary {
+  @apply bg-green-600 text-white hover:bg-green-700;
+}
+
+.dark .btn-primary {
+  @apply bg-green-500 hover:bg-green-600;
+}
+
+.btn-secondary {
+  @apply bg-gray-100 text-gray-700 hover:bg-gray-200;
+}
+
+.dark .btn-secondary {
+  @apply bg-gray-700 text-gray-200 hover:bg-gray-600;
+}
+
+.btn-danger {
+  @apply bg-red-600 text-white hover:bg-red-700;
+}
+
+.btn-ghost {
+  @apply bg-transparent text-gray-700 hover:bg-gray-100;
+}
+
+.dark .btn-ghost {
+  @apply text-gray-300 hover:bg-gray-800;
+}
+
+/* Input styles */
+.input {
+  @apply block w-full px-3 py-2 text-base border border-gray-300 rounded-lg bg-white;
+  min-height: 48px;
+}
+
+.input:focus {
+  @apply outline-none ring-2 ring-green-500 border-green-500;
+}
+
+.dark .input {
+  @apply bg-gray-800 border-gray-600 text-white;
+}
+
+.label {
+  @apply block text-sm font-medium text-gray-700 mb-1;
+}
+
+.dark .label {
+  @apply text-gray-300;
+}
+
+/* Table styles */
+.table-row {
+  @apply cursor-pointer transition-colors duration-150;
+}
+
+.table-row:hover {
+  @apply bg-gray-50;
+}
+
+.dark .table-row:hover {
+  @apply bg-gray-700/50;
+}
+
+.table-cell {
+  @apply px-4 py-3 text-sm;
+}
+
+/* Status badges */
+.badge {
+  @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
+}
+
+.badge-success {
+  @apply bg-green-100 text-green-800;
+}
+
+.dark .badge-success {
+  @apply bg-green-900/30 text-green-200;
+}
+
+.badge-warning {
+  @apply bg-yellow-100 text-yellow-800;
+}
+
+.dark .badge-warning {
+  @apply bg-yellow-900/30 text-yellow-200;
+}
+
+.badge-danger {
+  @apply bg-red-100 text-red-800;
+}
+
+.dark .badge-danger {
+  @apply bg-red-900/30 text-red-200;
+}
+
+.badge-info {
+  @apply bg-blue-100 text-blue-800;
+}
+
+.dark .badge-info {
+  @apply bg-blue-900/30 text-blue-200;
+}
+
+/* FAB (Floating Action Button) */
+.fab {
+  @apply fixed bottom-6 right-6 w-14 h-14 rounded-full bg-green-600 text-white shadow-lg flex items-center justify-center z-50 border-none cursor-pointer transition-all duration-200 hover:bg-green-700;
+}
+
+/* Sidebar navigation */
+.nav-link {
+  @apply flex items-center gap-3 px-4 py-3 text-gray-700 rounded-lg transition-all duration-150 no-underline;
+  min-height: 48px;
+}
+
+.nav-link:hover {
+  @apply bg-gray-100;
+}
+
+.dark .nav-link {
+  @apply text-gray-300;
+}
+
+.dark .nav-link:hover {
+  @apply bg-gray-800;
+}
+
+.nav-link.active {
+  @apply bg-green-50 text-green-700;
+}
+
+.dark .nav-link.active {
+  @apply bg-green-900/30 text-green-300;
+}
+
+/* Custom scrollbar for dark mode */
+.dark ::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.dark ::-webkit-scrollbar-track {
+  background: #1f2937;
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: #4b5563;
+  border-radius: 4px;
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: #6b7280;
+}
+
+/* Leaflet map fixes for dark mode */
+.dark .leaflet-container {
+  background: #1f2937;
+}
+
+.dark .leaflet-tile-pane {
+  filter: brightness(0.8) invert(1) contrast(0.9) hue-rotate(180deg);
+}
+
+.dark .leaflet-marker-pane img {
+  filter: brightness(1.2);
+}
