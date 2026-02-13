@@ -1,6 +1,6 @@
 # Outdoor CRM (AATOS) - Status
 
-**Last Updated**: 2026-02-13 ~1:45 AM CST
+**Last Updated**: 2026-02-13 ~1:50 AM CST
 
 ## FULLY DEPLOYED - Both Frontend & Backend Live
 
@@ -101,11 +101,33 @@ All 8 features implemented, built, deployed, and verified with Puppeteer:
 | @fullcalendar/interaction | ^6.x | Click/drag events |
 | @fullcalendar/core | ^6.x | Calendar core |
 
+### 11. Customer Page Redesign
+- **CustomersPage.tsx**: Full rewrite with avatar initials, status indicators, demo mode fix
+  - Color-coded initials avatars (2-letter) for each customer
+  - Status badges: "On track" (green), "X reminders" (amber), "Call overdue" (red)
+  - "N need attention" counter in header
+  - Clickable phone (tel:) and email (mailto:) links on mobile cards
+  - Fixed critical bug: demo mode returned flat arrays but page expected PaginatedResponse
+  - Client-side search and sort for demo mode
+  - Skeleton loading states instead of spinner
+  - Better empty state with icon and "Add Customer" CTA
+- **CustomerDetailPage.tsx**: Full rewrite with quick stats, better contact info, PageTransition
+  - Large avatar initials with colored background
+  - Quick stats row: completed jobs, total revenue, activities logged, outstanding balance
+  - Clickable phone, email, address (Google Maps link)
+  - "Call Now" button in sidebar
+  - Current note highlighted in green card
+  - Activity timeline with vertical connectors
+  - Reminder cards with overdue/today color coding
+  - Customer Info card (added date, added by, last updated)
+  - Toast notifications on note and activity mutations
+- **Demo data**: Added full Customer detail objects, demo activities, API overrides for get/getActivities/getReminders
+
 ## Files Changed
 
 - **34 new files** created (components, hooks, types, data, lib, form pages, leads)
 - **21 files modified** (all pages + common components + App.tsx + Layout.tsx)
-- Total: 4,538 insertions across 2 commits
+- Total: 4,538 insertions across 2 commits + 1,187 insertions in customer redesign
 
 ## What's Working
 
@@ -116,7 +138,8 @@ All 8 features implemented, built, deployed, and verified with Puppeteer:
 - **Service Catalog**: 5 categories, 24 services seeded from management command
 - **API Endpoints**: categories, services, jobs, estimates, invoices, dashboard summary — all working
 - **Frontend connected to backend**: `VITE_API_URL` set on Vercel, builds pull real data
-- **Demo data fallback**: If backend goes down, frontend shows sample data automatically
+- **Demo data fallback**: If backend goes down, frontend shows sample data automatically (including customer detail, activities, reminders)
+- **Customer Pages**: Redesigned with avatar initials, status indicators, quick stats, skeleton loading, Google Maps links
 - **Calendar**: FullCalendar renders on Jobs page with month/week/day views
 - **Weather**: 7-day forecast on Dashboard, badges on job cards
 - **Crew View**: Mobile-optimized at /crew with no sidebar
