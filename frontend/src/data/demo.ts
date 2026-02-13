@@ -6,7 +6,7 @@
 
 import type {
   ServiceCategory, Job, Estimate, Invoice,
-  OutdoorDashboardSummary, Reminder, CustomerListItem,
+  OutdoorDashboardSummary, Reminder, CustomerListItem, Customer, Activity,
 } from '../types';
 
 // --- Helpers ---
@@ -194,6 +194,61 @@ export const demoCustomers: CustomerListItem[] = [
   { id: 6, business_name: 'Kimberly Road Dental', city: 'Davenport', state: 'IA', primary_contact: 'Dr. Lisa Chen', main_phone: '(563) 555-0789', main_email: 'office@kimberlydentalcare.com', region: 3, region_name: 'East Davenport', last_call_date: daysAgo(14), next_call_date: daysFromNow(14), current_note: null, pending_reminders_count: 0, is_active: true },
   { id: 7, business_name: 'QC Brewing Company', city: 'Davenport', state: 'IA', primary_contact: 'Jake Torres', main_phone: '(563) 555-0654', main_email: 'jake@qcbrewing.com', region: 1, region_name: 'Central Davenport', last_call_date: daysAgo(35), next_call_date: daysAgo(5), current_note: { id: 7, content: 'OVERDUE - $203.30 outstanding', created_at: daysAgo(5) }, pending_reminders_count: 1, is_active: true },
   { id: 8, business_name: 'Bettendorf Heights HOA', city: 'Bettendorf', state: 'IA', primary_contact: 'Nancy Olsen', main_phone: '(563) 555-0890', main_email: 'nolsen@bettendorfhoa.com', region: 4, region_name: 'Bettendorf', last_call_date: daysAgo(1), next_call_date: daysFromNow(5), current_note: { id: 8, content: 'Potential large snow removal contract', created_at: daysAgo(1) }, pending_reminders_count: 1, is_active: true },
+];
+
+// --- Full Customer Detail objects (for /customers/:id) ---
+function customerDetail(list: CustomerListItem, address: string, extra?: Partial<Customer>): Customer {
+  return {
+    id: list.id,
+    business_name: list.business_name,
+    bill_to_address: address,
+    city: list.city,
+    state: list.state,
+    zip_code: '52801',
+    primary_contact: list.primary_contact,
+    main_email: list.main_email,
+    main_phone: list.main_phone,
+    secondary_phone: '',
+    fax: '',
+    fleet_description: '',
+    region: list.region,
+    region_name: list.region_name,
+    latitude: null,
+    longitude: null,
+    last_call_date: list.last_call_date,
+    next_call_date: list.next_call_date,
+    custom_fields: {},
+    notes: list.current_note ? [{ ...list.current_note, created_by: 1, created_by_name: 'Admin', is_current: true, parent_note: null }] : [],
+    current_note: list.current_note ? { ...list.current_note, created_by: 1, created_by_name: 'Admin', is_current: true, parent_note: null } : null,
+    created_by: 1,
+    created_by_name: 'Admin',
+    created_at: daysAgo(120),
+    updated_at: daysAgo(1),
+    is_active: list.is_active,
+    activity_count: 0,
+    pending_reminders_count: list.pending_reminders_count,
+    ...extra,
+  };
+}
+
+export const demoCustomerDetails: Customer[] = [
+  customerDetail(demoCustomers[0], '1425 E Locust St', { zip_code: '52803', fleet_description: 'Standard residential lot ~8,000 sqft. Front and back yard.' }),
+  customerDetail(demoCustomers[1], '300 W River Dr', { zip_code: '52801', fleet_description: '3-building office park, ~2 acres total. 2 parking lots, central courtyard.' }),
+  customerDetail(demoCustomers[2], '2810 N Division St', { zip_code: '52804' }),
+  customerDetail(demoCustomers[3], '1515 W 35th St', { zip_code: '52806', fax: '(563) 555-0457' }),
+  customerDetail(demoCustomers[4], '945 E 53rd St', { zip_code: '52807' }),
+  customerDetail(demoCustomers[5], '3622 Kimberly Rd', { zip_code: '52806' }),
+  customerDetail(demoCustomers[6], '208 E River Dr', { zip_code: '52801' }),
+  customerDetail(demoCustomers[7], '4500 Tanglefoot Ln', { city: 'Bettendorf', zip_code: '52722' }),
+];
+
+// --- Demo Activities ---
+export const demoActivities: Activity[] = [
+  { id: 1, customer: 1, customer_name: 'Johnson Residence', activity_type: 1, activity_type_name: 'Phone Call', activity_type_icon: 'phone', activity_type_color: '#3b82f6', subject: 'Scheduling call', notes: 'Confirmed Tuesday morning mowing schedule for the season', outcome: 'completed', activity_datetime: daysAgo(7) + 'T10:00:00Z', duration_minutes: 5, custom_fields: {}, created_by: 1, created_by_name: 'Admin', created_at: daysAgo(7), updated_at: daysAgo(7) },
+  { id: 2, customer: 7, customer_name: 'QC Brewing Company', activity_type: 1, activity_type_name: 'Phone Call', activity_type_icon: 'phone', activity_type_color: '#3b82f6', subject: 'Payment reminder', notes: 'Left voicemail about overdue invoice INV-2026-0045', outcome: 'left_message', activity_datetime: daysAgo(3) + 'T14:00:00Z', duration_minutes: 2, custom_fields: {}, created_by: 1, created_by_name: 'Admin', created_at: daysAgo(3), updated_at: daysAgo(3) },
+  { id: 3, customer: 5, customer_name: 'Williams Property', activity_type: 2, activity_type_name: 'Site Visit', activity_type_icon: 'map-pin', activity_type_color: '#16a34a', subject: 'Estimate walkthrough', notes: 'Walked the property with Carol. Discussed full landscape renovation options.', outcome: 'interested', activity_datetime: daysAgo(5) + 'T09:00:00Z', duration_minutes: 45, custom_fields: {}, created_by: 1, created_by_name: 'Admin', created_at: daysAgo(5), updated_at: daysAgo(5) },
+  { id: 4, customer: 2, customer_name: 'Riverfront Office Park', activity_type: 1, activity_type_name: 'Phone Call', activity_type_icon: 'phone', activity_type_color: '#3b82f6', subject: 'Contract renewal', notes: 'Renewed annual maintenance contract for 2026. Same terms.', outcome: 'completed', activity_datetime: daysAgo(15) + 'T11:00:00Z', duration_minutes: 15, custom_fields: {}, created_by: 1, created_by_name: 'Admin', created_at: daysAgo(15), updated_at: daysAgo(15) },
+  { id: 5, customer: 8, customer_name: 'Bettendorf Heights HOA', activity_type: 3, activity_type_name: 'Email', activity_type_icon: 'mail', activity_type_color: '#8b5cf6', subject: 'Snow removal estimate', notes: 'Sent draft snow removal estimate for review', outcome: 'follow_up_needed', activity_datetime: daysAgo(1) + 'T16:00:00Z', duration_minutes: 10, custom_fields: {}, created_by: 1, created_by_name: 'Admin', created_at: daysAgo(1), updated_at: daysAgo(1) },
 ];
 
 // --- Dashboard Summary ---

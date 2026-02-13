@@ -277,6 +277,7 @@ export const importExportApi = {
 import {
   isDemoMode, demoCategories, demoJobs, demoEstimates,
   demoInvoices, demoDashboardSummary, demoReminders, demoCustomers,
+  demoCustomerDetails, demoActivities,
 } from '../data/demo';
 
 // Helper: try the real API, fall back to demo data on failure
@@ -416,6 +417,24 @@ const _originalCustomersList = customersApi.list;
 customersApi.list = async (params?: Record<string, string | number>) => withDemo(
   () => _originalCustomersList(params),
   demoCustomers,
+);
+
+const _originalCustomersGet = customersApi.get;
+customersApi.get = async (id: number) => withDemo(
+  () => _originalCustomersGet(id),
+  demoCustomerDetails.find(c => c.id === id) as ReturnType<typeof _originalCustomersGet> extends Promise<infer R> ? R : never,
+);
+
+const _originalCustomersGetActivities = customersApi.getActivities;
+customersApi.getActivities = async (id: number) => withDemo(
+  () => _originalCustomersGetActivities(id),
+  demoActivities.filter(a => a.customer === id),
+);
+
+const _originalCustomersGetReminders = customersApi.getReminders;
+customersApi.getReminders = async (id: number) => withDemo(
+  () => _originalCustomersGetReminders(id),
+  demoReminders.filter(r => r.customer === id),
 );
 
 export default api;
