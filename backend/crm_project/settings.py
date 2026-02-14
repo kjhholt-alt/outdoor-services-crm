@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     'apps.routing',
     'apps.imports',
     'apps.services',
+    'apps.scanner',
 ]
 
 MIDDLEWARE = [
