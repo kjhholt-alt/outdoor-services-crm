@@ -20,7 +20,6 @@ import { JobFormPage } from './pages/JobFormPage';
 import { EstimateFormPage } from './pages/EstimateFormPage';
 import { InvoiceFormPage } from './pages/InvoiceFormPage';
 import { LeadsPage } from './pages/LeadsPage';
-import { MeetingMinutesPage } from './pages/MeetingMinutesPage';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -50,7 +49,6 @@ function App() {
             <Route path="/invoices" element={<InvoicesPage />} />
             <Route path="/invoices/new" element={<InvoiceFormPage />} />
             <Route path="/leads" element={<LeadsPage />} />
-            <Route path="/scanner" element={<MeetingMinutesPage />} />
             <Route path="/reports" element={<ReportsPage />} />
             <Route path="/reminders" element={<RemindersPage />} />
             <Route path="/activities" element={<ActivitiesPage />} />

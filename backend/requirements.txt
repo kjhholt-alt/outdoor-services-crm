@@ -12,7 +12,3 @@ python-dotenv>=1.0
 whitenoise>=6.6
 dj-database-url>=2.1
 psycopg2-binary>=2.9
-duckduckgo-search>=7.0
-beautifulsoup4>=4.12
-PyPDF2>=3.0
-requests>=2.31

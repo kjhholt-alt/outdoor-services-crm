@@ -22,5 +22,4 @@ urlpatterns = [
     path('routes/', include('apps.routing.urls')),
     path('import/', include('apps.imports.urls')),
     path('api/', include('apps.services.urls')),
-    path('scanner/', include('apps.scanner.urls')),
 ]
