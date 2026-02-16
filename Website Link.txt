@@ -1,0 +1,6 @@
+Outdoor CRM (AATOS) - Website Links
+
+Frontend: https://outdoor-services-crm.vercel.app
+Backend API: https://motivated-vitality-production.up.railway.app
+Health Check: https://motivated-vitality-production.up.railway.app/health/
+GitHub: https://github.com/kjhholt-alt/outdoor-services-crm

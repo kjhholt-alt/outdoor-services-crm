@@ -2,6 +2,12 @@
 
 **Last Updated**: 2026-02-13 ~1:50 AM CST
 
+## CLIENT PROJECT — Proposal Ready
+
+**Proposal**: See `PROPOSAL.md` in this directory
+**Pricing tiers**: $500 (code handoff) / $800 (turnkey setup) / $800 + $75-150/mo (ongoing support)
+**Handoff timeline**: 7-10 days from agreement
+
 ## FULLY DEPLOYED - Both Frontend & Backend Live
 
 | Component | Status | URL |

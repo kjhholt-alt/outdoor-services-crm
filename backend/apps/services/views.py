@@ -1,5 +1,6 @@
 from rest_framework import viewsets, status, filters
 from rest_framework.decorators import action, api_view
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from django_filters.rest_framework import DjangoFilterBackend
 from django.utils import timezone
@@ -33,6 +34,7 @@ class ServiceViewSet(viewsets.ModelViewSet):
 
 
 class JobViewSet(viewsets.ModelViewSet):
+    permission_classes = [IsAuthenticated]
     queryset = Job.objects.select_related('customer', 'service', 'service__category')
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = ['status', 'customer', 'service', 'assigned_to', 'is_invoiced']
@@ -112,6 +114,7 @@ class JobViewSet(viewsets.ModelViewSet):
 
 
 class EstimateViewSet(viewsets.ModelViewSet):
+    permission_classes = [IsAuthenticated]
     queryset = Estimate.objects.select_related('customer')
     filter_backends = [DjangoFilterBackend, filters.SearchFilter]
     filterset_fields = ['status', 'customer']
