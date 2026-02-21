@@ -120,3 +120,10 @@ class Command(BaseCommand):
         self.stdout.write(self.style.SUCCESS(
             f'Seeded {created_categories} categories, {created_services} services'
         ))
+
+        # Also seed demo customers
+        from django.core.management import call_command
+        try:
+            call_command('seed_demo_customers')
+        except Exception as e:
+            self.stdout.write(self.style.WARNING(f'Demo customer seeding: {e}'))
