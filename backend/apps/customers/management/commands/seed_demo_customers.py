@@ -80,6 +80,9 @@ class Command(BaseCommand):
         user = User.objects.filter(is_superuser=True).first()
         if not user:
             user = User.objects.first()
+        if not user:
+            user = User.objects.create_superuser('admin', 'admin@aatos.com', 'aatos2026!')
+            self.stdout.write(self.style.WARNING('  Created admin user: admin / aatos2026!'))
 
         # Ensure service categories and services exist
         cat_lawn, _ = ServiceCategory.objects.get_or_create(
