@@ -19,8 +19,10 @@ import {
   Sun,
   TreePine,
   Info,
+  Settings,
 } from 'lucide-react';
 import { isDemoMode } from '../../data/demo';
+import { GlobalSearch } from './GlobalSearch';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -39,6 +41,7 @@ const navItems = [
   { path: '/reports', icon: BarChart3, label: 'Reports' },
   { path: '/import', icon: Upload, label: 'Import/Export' },
   { path: '/crew', icon: Smartphone, label: 'Crew View' },
+  { path: '/settings', icon: Settings, label: 'Settings' },
 ];
 
 export function Layout({ children }: LayoutProps) {
@@ -151,16 +154,16 @@ export function Layout({ children }: LayoutProps) {
 
       {/* Main content */}
       <div className="lg:pl-64">
-        {/* Mobile header */}
-        <header className="sticky top-0 z-30 h-16 bg-white dark:bg-stone-800 border-b border-stone-200 dark:border-stone-700 lg:hidden">
+        {/* Desktop header with search */}
+        <header className="sticky top-0 z-30 h-16 bg-white dark:bg-stone-800 border-b border-stone-200 dark:border-stone-700">
           <div className="flex items-center justify-between h-full px-4">
             <button
               onClick={() => setSidebarOpen(true)}
-              className="p-2 text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg min-h-[48px] min-w-[48px] flex items-center justify-center"
+              className="lg:hidden p-2 text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg min-h-[48px] min-w-[48px] flex items-center justify-center"
             >
               <Menu className="w-6 h-6" />
             </button>
-            <Link to="/" className="flex items-center gap-2">
+            <Link to="/" className="flex items-center gap-2 lg:hidden">
               <div className="w-8 h-8 bg-green-600 rounded-lg flex items-center justify-center">
                 <TreePine className="w-5 h-5 text-white" />
               </div>
@@ -168,7 +171,10 @@ export function Layout({ children }: LayoutProps) {
                 AATOS CRM
               </span>
             </Link>
-            <div className="w-10" />
+            <div className="hidden lg:block flex-1 max-w-md">
+              <GlobalSearch />
+            </div>
+            <div className="w-10 lg:hidden" />
           </div>
         </header>
 

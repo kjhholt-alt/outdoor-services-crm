@@ -260,5 +260,7 @@ export const demoDashboardSummary: OutdoorDashboardSummary = {
 };
 
 // --- Check if we should use demo data ---
+// Demo mode only activates when VITE_API_URL is explicitly set to 'demo' or not set at all.
+// When developing locally against a real backend, set VITE_API_URL=http://localhost:8000
 const apiUrl = import.meta.env.VITE_API_URL || '';
-export const isDemoMode = !apiUrl || apiUrl === 'http://localhost:8000';
+export const isDemoMode = !apiUrl || apiUrl === 'demo';

@@ -143,6 +143,8 @@ class InvoiceDetailSerializer(serializers.ModelSerializer):
 
 
 class InvoiceCreateUpdateSerializer(serializers.ModelSerializer):
+    invoice_number = serializers.CharField(required=False, allow_blank=True)
+
     class Meta:
         model = Invoice
         fields = [

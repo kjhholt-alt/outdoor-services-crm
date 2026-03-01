@@ -1,9 +1,10 @@
 import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import {
-  Receipt, Plus, AlertCircle, Clock, Eye, Download,
+  Receipt, Plus, AlertCircle, Clock, Eye, Download, CheckCircle,
 } from 'lucide-react';
+import { toast } from 'sonner';
 import { invoicesApi } from '../api/client.ts';
 import { Card } from '../components/common/Card.tsx';
 import { PageTransition } from '../components/common/PageTransition';
@@ -21,8 +22,21 @@ const STATUS_CONFIG: Record<InvoiceStatus, { label: string; color: string; bg: s
 };
 
 export function InvoicesPage() {
+  const queryClient = useQueryClient();
   const [view, setView] = useState<'all' | 'outstanding' | 'overdue'>('all');
   const [previewInvoice, setPreviewInvoice] = useState<Invoice | null>(null);
+
+  const markPaidMutation = useMutation({
+    mutationFn: ({ id, amount }: { id: number; amount: number }) =>
+      invoicesApi.recordPayment(id, amount),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['invoices'] });
+      toast.success('Payment recorded!');
+    },
+    onError: () => {
+      toast.error('Failed to record payment');
+    },
+  });
 
   const { data: allData } = useQuery({
     queryKey: ['invoices'],
@@ -127,6 +141,20 @@ export function InvoicesPage() {
                     >
                       <Download className="w-4 h-4" />
                     </button>
+                    {inv.status !== 'paid' && inv.status !== 'void' && (
+                      <button
+                        onClick={() => {
+                          const balance = Number(inv.total) - Number(inv.amount_paid);
+                          if (confirm(`Mark as paid? Record $${balance.toFixed(2)} payment?`)) {
+                            markPaidMutation.mutate({ id: inv.id, amount: balance });
+                          }
+                        }}
+                        className="p-2 rounded-lg text-gray-400 hover:text-green-600 dark:hover:text-green-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                        title="Mark as paid"
+                      >
+                        <CheckCircle className="w-4 h-4" />
+                      </button>
+                    )}
                     <div className="text-right ml-2">
                       <span className="text-lg font-bold text-green-700 dark:text-green-400">
                         ${Number(inv.total).toFixed(2)}

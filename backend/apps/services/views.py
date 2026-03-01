@@ -1,6 +1,6 @@
 from rest_framework import viewsets, status, filters
-from rest_framework.decorators import action, api_view
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.decorators import action, api_view, permission_classes as perm_classes
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 from django_filters.rest_framework import DjangoFilterBackend
 from django.utils import timezone
@@ -16,6 +16,7 @@ from .serializers import (
 
 
 class ServiceCategoryViewSet(viewsets.ModelViewSet):
+    permission_classes = [AllowAny]
     queryset = ServiceCategory.objects.filter(is_active=True)
     serializer_class = ServiceCategorySerializer
     pagination_class = None
@@ -25,6 +26,7 @@ class ServiceCategoryViewSet(viewsets.ModelViewSet):
 
 
 class ServiceViewSet(viewsets.ModelViewSet):
+    permission_classes = [AllowAny]
     queryset = Service.objects.filter(is_active=True).select_related('category')
     serializer_class = ServiceSerializer
     filter_backends = [DjangoFilterBackend, filters.SearchFilter]
@@ -161,6 +163,7 @@ class EstimateViewSet(viewsets.ModelViewSet):
 
 
 class InvoiceViewSet(viewsets.ModelViewSet):
+    permission_classes = [IsAuthenticated]
     queryset = Invoice.objects.select_related('customer')
     filter_backends = [DjangoFilterBackend, filters.SearchFilter]
     filterset_fields = ['status', 'customer']
@@ -209,6 +212,7 @@ class InvoiceViewSet(viewsets.ModelViewSet):
 
 
 @api_view(['GET'])
+@perm_classes([IsAuthenticated])
 def dashboard_summary(request):
     """Dashboard summary with job counts, revenue, and outstanding invoices"""
     today = timezone.now().date()

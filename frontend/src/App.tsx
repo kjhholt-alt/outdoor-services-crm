@@ -23,6 +23,7 @@ import { JobFormPage } from './pages/JobFormPage';
 import { EstimateFormPage } from './pages/EstimateFormPage';
 import { InvoiceFormPage } from './pages/InvoiceFormPage';
 import { LeadsPage } from './pages/LeadsPage';
+import { SettingsPage } from './pages/SettingsPage';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -57,6 +58,7 @@ function ProtectedApp() {
           <Route path="/routes" element={<RoutesPage />} />
           <Route path="/import" element={<ImportExportPage />} />
           <Route path="/crew" element={<CrewPage />} />
+          <Route path="/settings" element={<SettingsPage />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Layout>

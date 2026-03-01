@@ -120,7 +120,7 @@ export function InvoiceFormPage() {
       issued_date: formData.issued_date,
       due_date: formData.due_date || setDefaultDueDate(formData.issued_date),
       notes: formData.notes,
-      job_ids: formData.selectedJobs,
+      jobs: formData.selectedJobs,
     };
     createMutation.mutate(data);
   };

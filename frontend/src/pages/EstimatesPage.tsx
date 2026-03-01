@@ -1,8 +1,9 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import {
-  FileText, Plus, Clock,
+  FileText, Plus, Clock, CheckCircle,
 } from 'lucide-react';
+import { toast } from 'sonner';
 import { estimatesApi } from '../api/client';
 import { Card } from '../components/common/Card';
 import { PageTransition } from '../components/common/PageTransition';
@@ -17,9 +18,23 @@ const STATUS_CONFIG: Record<EstimateStatus, { label: string; color: string; bg: 
 };
 
 export function EstimatesPage() {
+  const queryClient = useQueryClient();
+
   const { data } = useQuery({
     queryKey: ['estimates'],
     queryFn: () => estimatesApi.list(),
+  });
+
+  const acceptMutation = useMutation({
+    mutationFn: (id: number) => estimatesApi.accept(id),
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['estimates'] });
+      queryClient.invalidateQueries({ queryKey: ['jobs'] });
+      toast.success(`Estimate accepted! ${data.jobs_created} job(s) created.`);
+    },
+    onError: () => {
+      toast.error('Failed to accept estimate');
+    },
   });
 
   const estimates: Estimate[] = data?.results ?? data ?? [];
@@ -66,15 +81,31 @@ export function EstimatesPage() {
                       )}
                     </div>
                   </div>
-                  <div className="text-right shrink-0">
-                    <span className="text-lg font-bold text-green-700 dark:text-green-400">
-                      ${Number(est.total).toFixed(2)}
-                    </span>
-                    {est.valid_until && (
-                      <p className="text-xs text-gray-400">
-                        Valid until {est.valid_until}
-                      </p>
+                  <div className="flex items-center gap-2 shrink-0">
+                    {(est.status === 'sent' || est.status === 'draft') && (
+                      <button
+                        onClick={() => {
+                          if (confirm(`Accept this estimate and create jobs?`)) {
+                            acceptMutation.mutate(est.id);
+                          }
+                        }}
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-green-50 dark:bg-green-900/30 text-green-600 dark:text-green-400 hover:bg-green-100 dark:hover:bg-green-900/50 text-sm font-medium transition-colors"
+                        title="Accept estimate and create jobs"
+                      >
+                        <CheckCircle className="w-4 h-4" />
+                        Accept
+                      </button>
                     )}
+                    <div className="text-right">
+                      <span className="text-lg font-bold text-green-700 dark:text-green-400">
+                        ${Number(est.total).toFixed(2)}
+                      </span>
+                      {est.valid_until && (
+                        <p className="text-xs text-gray-400">
+                          Valid until {est.valid_until}
+                        </p>
+                      )}
+                    </div>
                   </div>
                 </div>
               </Card>

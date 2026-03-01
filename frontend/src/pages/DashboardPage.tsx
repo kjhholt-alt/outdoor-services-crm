@@ -7,7 +7,9 @@ import {
 import { outdoorDashboardApi, jobsApi, remindersApi } from '../api/client';
 import { Card, CardHeader, CardContent } from '../components/common/Card';
 import { WeatherWidget } from '../components/weather/WeatherWidget.tsx';
+import { RevenueChart } from '../components/reports/RevenueChart';
 import { PageTransition } from '../components/common/PageTransition';
+import { monthlyRevenue2025 } from '../data/demoReports';
 import type { OutdoorDashboardSummary, Job, Reminder } from '../types';
 
 export function DashboardPage() {
@@ -96,6 +98,22 @@ export function DashboardPage() {
           </div>
         </Card>
       )}
+
+      {/* Monthly Revenue Chart */}
+      <Card>
+        <CardHeader
+          title="Monthly Revenue"
+          subtitle="Last 12 months"
+          action={
+            <Link to="/reports" className="text-green-600 hover:text-green-700 text-sm font-medium">
+              Full reports
+            </Link>
+          }
+        />
+        <CardContent>
+          <RevenueChart data={monthlyRevenue2025.slice(-6)} />
+        </CardContent>
+      </Card>
 
       {/* Weather Forecast */}
       <WeatherWidget />

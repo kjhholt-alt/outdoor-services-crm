@@ -1,9 +1,7 @@
 import { useState } from 'react';
 import type { FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
-
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+import { api } from '../api/client';
 
 export function LoginPage() {
   const [username, setUsername] = useState('');
@@ -17,7 +15,7 @@ export function LoginPage() {
     setError('');
     setLoading(true);
     try {
-      const res = await axios.post(`${API_BASE_URL}/auth/login/`, { username, password });
+      const res = await api.post('/auth/login/', { username, password });
       localStorage.setItem('access_token', res.data.access);
       localStorage.setItem('refresh_token', res.data.refresh);
       navigate('/', { replace: true });

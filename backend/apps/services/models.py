@@ -154,7 +154,7 @@ class Invoice(models.Model):
     ]
 
     customer = models.ForeignKey(Customer, on_delete=models.CASCADE, related_name='invoices')
-    invoice_number = models.CharField(max_length=20, unique=True)
+    invoice_number = models.CharField(max_length=20, unique=True, blank=True)
     jobs = models.ManyToManyField(Job, blank=True, related_name='invoices')
     subtotal = models.DecimalField(max_digits=10, decimal_places=2)
     tax_rate = models.DecimalField(max_digits=4, decimal_places=2, default=0)
@@ -178,3 +178,20 @@ class Invoice(models.Model):
     @property
     def balance_due(self):
         return self.total - self.amount_paid
+
+    def save(self, *args, **kwargs):
+        if not self.invoice_number:
+            from django.utils import timezone
+            year = timezone.now().year
+            last = Invoice.objects.filter(
+                invoice_number__startswith=f'INV-{year}-'
+            ).order_by('-invoice_number').first()
+            if last:
+                try:
+                    last_num = int(last.invoice_number.split('-')[-1])
+                except (ValueError, IndexError):
+                    last_num = 0
+                self.invoice_number = f'INV-{year}-{last_num + 1:04d}'
+            else:
+                self.invoice_number = f'INV-{year}-0001'
+        super().save(*args, **kwargs)
