@@ -7,10 +7,8 @@ import {
   Area,
   AreaChart,
 } from 'recharts';
-import type { MonthlyRevenue } from '../../data/demoReports';
-
 interface RevenueChartProps {
-  data: MonthlyRevenue[];
+  data: { month: string; revenue: number }[];
 }
 
 const formatDollar = (value: number) => `$${(value / 1000).toFixed(0)}k`;

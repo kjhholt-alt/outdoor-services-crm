@@ -197,12 +197,17 @@ class InvoiceViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=['post'])
     def record_payment(self, request, pk=None):
         """Record a payment on an invoice"""
+        from decimal import Decimal, InvalidOperation
         invoice = self.get_object()
         amount = request.data.get('amount')
         if not amount:
             return Response({'error': 'amount is required'}, status=status.HTTP_400_BAD_REQUEST)
-        invoice.amount_paid += float(amount)
-        if invoice.amount_paid >= float(invoice.total):
+        try:
+            amount = Decimal(str(amount))
+        except (InvalidOperation, ValueError):
+            return Response({'error': 'Invalid amount'}, status=status.HTTP_400_BAD_REQUEST)
+        invoice.amount_paid += amount
+        if invoice.amount_paid >= invoice.total:
             invoice.status = 'paid'
             invoice.paid_date = timezone.now().date()
         else:
@@ -247,6 +252,25 @@ def dashboard_summary(request):
     )
     overdue_amount = (overdue_total['total'] or 0) - (overdue_total['paid'] or 0)
 
+    # Monthly revenue (last 12 months)
+    monthly_revenue = []
+    for i in range(11, -1, -1):
+        m_start = (today.replace(day=1) - timedelta(days=i * 30)).replace(day=1)
+        if m_start.month == 12:
+            m_end = m_start.replace(year=m_start.year + 1, month=1)
+        else:
+            m_end = m_start.replace(month=m_start.month + 1)
+        rev = Job.objects.filter(
+            scheduled_date__gte=m_start, scheduled_date__lt=m_end, status='completed'
+        ).aggregate(total=Sum('price'))['total'] or 0
+        inv_rev = Invoice.objects.filter(
+            issued_date__gte=m_start, issued_date__lt=m_end, status='paid'
+        ).aggregate(total=Sum('total'))['total'] or 0
+        monthly_revenue.append({
+            'month': m_start.strftime('%b %Y'),
+            'revenue': float(max(rev, inv_rev)),
+        })
+
     return Response({
         'today': {
             'total_jobs': today_jobs.count(),
@@ -270,4 +294,5 @@ def dashboard_summary(request):
             'overdue_count': overdue.count(),
             'overdue_amount': float(overdue_amount),
         },
+        'monthly_revenue': monthly_revenue,
     })

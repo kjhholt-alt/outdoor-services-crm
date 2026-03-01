@@ -9,7 +9,6 @@ import { Card, CardHeader, CardContent } from '../components/common/Card';
 import { WeatherWidget } from '../components/weather/WeatherWidget.tsx';
 import { RevenueChart } from '../components/reports/RevenueChart';
 import { PageTransition } from '../components/common/PageTransition';
-import { monthlyRevenue2025 } from '../data/demoReports';
 import type { OutdoorDashboardSummary, Job, Reminder } from '../types';
 
 export function DashboardPage() {
@@ -111,7 +110,13 @@ export function DashboardPage() {
           }
         />
         <CardContent>
-          <RevenueChart data={monthlyRevenue2025.slice(-6)} />
+          {summary?.monthly_revenue ? (
+            <RevenueChart data={summary.monthly_revenue.slice(-6)} />
+          ) : (
+            <div className="h-48 flex items-center justify-center text-gray-400">
+              Loading revenue data...
+            </div>
+          )}
         </CardContent>
       </Card>
 

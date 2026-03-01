@@ -344,4 +344,5 @@ export interface OutdoorDashboardSummary {
     overdue_count: number;
     overdue_amount: number;
   };
+  monthly_revenue?: { month: string; revenue: number }[];
 }
