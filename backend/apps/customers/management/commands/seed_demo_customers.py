@@ -4,7 +4,7 @@ from decimal import Decimal
 from django.core.management.base import BaseCommand
 from django.contrib.auth.models import User
 from apps.customers.models import Customer
-from apps.services.models import ServiceCategory, Service, Job, Invoice
+from apps.services.models import ServiceCategory, Service, Job, Invoice, Estimate
 
 
 CUSTOMERS = [
@@ -123,4 +123,33 @@ class Command(BaseCommand):
                     issued_date=today - timedelta(days=14),
                     due_date=today + timedelta(days=16) if inv_status != "overdue" else today - timedelta(days=5))
 
-        self.stdout.write(self.style.SUCCESS(f"✓ Seeded {len(CUSTOMERS)} demo customers with jobs & invoices"))
+        # Create sample estimates
+        est_customers = Customer.objects.all()[:3]
+        est_data = [
+            {"title": "Full Landscape Renovation", "line_items": [
+                {"service": "Landscape Design", "price": 500, "notes": "Custom design"},
+                {"service": "Plant Material", "price": 1200, "notes": "12 shrubs, 24 perennials"},
+                {"service": "Installation", "price": 1800, "notes": "3-day install"},
+            ], "total": Decimal("3500"), "status": "sent"},
+            {"title": "Annual Maintenance Contract", "line_items": [
+                {"service": "Weekly Mowing (Apr-Oct)", "price": 1260, "notes": "28 weeks @ $45"},
+                {"service": "Fertilization (5-step)", "price": 375, "notes": "5 applications"},
+                {"service": "Spring/Fall Cleanup", "price": 375, "notes": "2 cleanups"},
+            ], "total": Decimal("2010"), "status": "accepted"},
+            {"title": "Parking Lot Snow Removal", "line_items": [
+                {"service": "Plowing per event", "price": 150, "notes": "Est. 15 events"},
+                {"service": "Salt application", "price": 75, "notes": "Per event"},
+            ], "total": Decimal("3375"), "status": "draft"},
+        ]
+        for i, est in enumerate(est_data):
+            if i < len(est_customers):
+                Estimate.objects.get_or_create(
+                    customer=est_customers[i], title=est["title"],
+                    defaults={
+                        "line_items": est["line_items"], "total": est["total"],
+                        "status": est["status"],
+                        "valid_until": today + timedelta(days=30),
+                        "created_by": user,
+                    })
+
+        self.stdout.write(self.style.SUCCESS(f"Seeded {len(CUSTOMERS)} demo customers with jobs, invoices & estimates"))

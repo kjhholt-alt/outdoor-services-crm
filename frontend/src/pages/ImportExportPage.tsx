@@ -247,8 +247,8 @@ function ExportSection() {
       a.click();
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
-    } catch (error) {
-      console.error('Export failed:', error);
+    } catch {
+      // Export failed silently
     } finally {
       setExporting(false);
     }
