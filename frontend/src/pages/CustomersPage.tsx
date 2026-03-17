@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
@@ -45,6 +45,174 @@ function getAvatarColor(id: number): string {
 function isCallOverdue(nextCallDate: string | null): boolean {
   if (!nextCallDate) return false;
   return new Date(nextCallDate) < new Date();
+}
+
+// Mobile swipeable card component
+interface SwipeableCardProps {
+  customer: CustomerListItem;
+  onNavigate: () => void;
+  overdue: boolean;
+}
+
+function SwipeableCard({ customer, onNavigate, overdue }: SwipeableCardProps) {
+  const [touchStart, setTouchStart] = useState(0);
+  const [touchEnd, setTouchEnd] = useState(0);
+  const [swipeOffset, setSwipeOffset] = useState(0);
+  const [showActions, setShowActions] = useState(false);
+  const cardRef = useRef<HTMLDivElement>(null);
+
+  const minSwipeDistance = 80;
+  const maxSwipeDistance = 160;
+
+  const onTouchStart = (e: React.TouchEvent) => {
+    setTouchEnd(0);
+    setTouchStart(e.targetTouches[0].clientX);
+  };
+
+  const onTouchMove = (e: React.TouchEvent) => {
+    setTouchEnd(e.targetTouches[0].clientX);
+    const distance = touchStart - e.targetTouches[0].clientX;
+    if (distance > 0 && distance <= maxSwipeDistance) {
+      setSwipeOffset(distance);
+    }
+  };
+
+  const onTouchEnd = () => {
+    if (!touchStart || !touchEnd) return;
+    const distance = touchStart - touchEnd;
+    const isLeftSwipe = distance > minSwipeDistance;
+
+    if (isLeftSwipe) {
+      setSwipeOffset(maxSwipeDistance);
+      setShowActions(true);
+    } else {
+      setSwipeOffset(0);
+      setShowActions(false);
+    }
+  };
+
+  const handleCall = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (customer.main_phone) {
+      window.location.href = `tel:${customer.main_phone}`;
+    }
+  };
+
+  const handleEmail = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (customer.main_email) {
+      window.location.href = `mailto:${customer.main_email}`;
+    }
+  };
+
+  return (
+    <div className="relative overflow-hidden">
+      {/* Action buttons (revealed on swipe) */}
+      <div className="absolute right-0 top-0 bottom-0 flex items-stretch">
+        {customer.main_phone && (
+          <button
+            onClick={handleCall}
+            className="w-20 bg-green-600 hover:bg-green-700 text-white flex flex-col items-center justify-center gap-1 transition-colors active:bg-green-800"
+            aria-label="Call customer"
+          >
+            <Phone className="w-5 h-5" />
+            <span className="text-xs font-medium">Call</span>
+          </button>
+        )}
+        {customer.main_email && (
+          <button
+            onClick={handleEmail}
+            className="w-20 bg-blue-600 hover:bg-blue-700 text-white flex flex-col items-center justify-center gap-1 transition-colors active:bg-blue-800"
+            aria-label="Email customer"
+          >
+            <Mail className="w-5 h-5" />
+            <span className="text-xs font-medium">Email</span>
+          </button>
+        )}
+      </div>
+
+      {/* Card content */}
+      <div
+        ref={cardRef}
+        onTouchStart={onTouchStart}
+        onTouchMove={onTouchMove}
+        onTouchEnd={onTouchEnd}
+        onClick={() => !showActions && onNavigate()}
+        className="bg-white dark:bg-gray-800 relative transition-transform duration-200 ease-out"
+        style={{ transform: `translateX(-${swipeOffset}px)` }}
+      >
+        <div className="p-4 hover:bg-gray-50 dark:hover:bg-gray-700/50 cursor-pointer active:bg-gray-100 dark:active:bg-gray-700">
+          <div className="flex items-start gap-3">
+            <div
+              className={`w-11 h-11 rounded-full flex items-center justify-center text-white text-sm font-bold flex-shrink-0 ${getAvatarColor(customer.id)}`}
+            >
+              {getInitials(customer.business_name)}
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-start justify-between gap-2">
+                <p className="font-medium text-gray-900 dark:text-white truncate">
+                  {customer.business_name}
+                </p>
+                <ChevronRight className="w-5 h-5 text-gray-400 flex-shrink-0" />
+              </div>
+              {customer.primary_contact && (
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                  {customer.primary_contact}
+                </p>
+              )}
+              <div className="flex flex-wrap gap-x-4 gap-y-1 mt-2 text-sm text-gray-500 dark:text-gray-400">
+                {customer.main_phone && (
+                  <span className="flex items-center gap-1 text-green-600 dark:text-green-400">
+                    <Phone className="w-3.5 h-3.5" />
+                    {customer.main_phone}
+                  </span>
+                )}
+                {customer.main_email && (
+                  <span className="flex items-center gap-1 text-blue-600 dark:text-blue-400">
+                    <Mail className="w-3.5 h-3.5" />
+                    <span className="truncate max-w-[160px]">
+                      {customer.main_email}
+                    </span>
+                  </span>
+                )}
+                {(customer.city || customer.state) && (
+                  <span className="flex items-center gap-1">
+                    <MapPin className="w-3.5 h-3.5" />
+                    {customer.city}
+                    {customer.city && customer.state && ', '}
+                    {customer.state}
+                  </span>
+                )}
+              </div>
+              {/* Status badges */}
+              <div className="flex flex-wrap gap-2 mt-2">
+                {customer.region_name && (
+                  <span className="badge badge-info">
+                    {customer.region_name}
+                  </span>
+                )}
+                {customer.pending_reminders_count > 0 && (
+                  <span className="badge badge-warning">
+                    <Bell className="w-3 h-3 mr-1" />
+                    {customer.pending_reminders_count} reminder
+                    {customer.pending_reminders_count !== 1 ? 's' : ''}
+                  </span>
+                )}
+                {overdue && (
+                  <span className="badge badge-danger">Call overdue</span>
+                )}
+              </div>
+              {customer.current_note && (
+                <p className="text-xs text-gray-400 dark:text-gray-500 mt-2 truncate">
+                  {customer.current_note.content}
+                </p>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 // Normalize API response: demo mode returns flat arrays, backend returns PaginatedResponse
@@ -163,7 +331,7 @@ export function CustomersPage() {
 
   return (
     <PageTransition>
-      <div className="space-y-6">
+      <div className="space-y-6 pb-20 lg:pb-6">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
@@ -192,8 +360,9 @@ export function CustomersPage() {
           </Button>
         </div>
 
-        {/* Search and Filters */}
-        <div className="card p-4">
+        {/* Search and Filters - Sticky on mobile */}
+        <div className="sticky top-0 z-10 lg:static">
+          <div className="card p-4 shadow-lg lg:shadow-none">
           <form onSubmit={handleSearch} className="flex gap-3">
             <div className="flex-1 relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
@@ -257,6 +426,7 @@ export function CustomersPage() {
               />
             </div>
           )}
+          </div>
         </div>
 
         {/* Customer List */}
@@ -416,96 +586,17 @@ export function CustomersPage() {
                 </table>
               </div>
 
-              {/* Mobile List */}
+              {/* Mobile Card List with Swipe Actions */}
               <div className="lg:hidden divide-y divide-gray-200 dark:divide-gray-700">
                 {sortedCustomers.map((customer) => {
                   const overdue = isCallOverdue(customer.next_call_date);
                   return (
-                    <div
+                    <SwipeableCard
                       key={customer.id}
-                      onClick={() => navigate(`/customers/${customer.id}`)}
-                      className="p-4 hover:bg-gray-50 dark:hover:bg-gray-700/50 cursor-pointer active:bg-gray-100 dark:active:bg-gray-700"
-                    >
-                      <div className="flex items-start gap-3">
-                        <div
-                          className={`w-11 h-11 rounded-full flex items-center justify-center text-white text-sm font-bold flex-shrink-0 ${getAvatarColor(customer.id)}`}
-                        >
-                          {getInitials(customer.business_name)}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-start justify-between gap-2">
-                            <p className="font-medium text-gray-900 dark:text-white truncate">
-                              {customer.business_name}
-                            </p>
-                            <ChevronRight className="w-5 h-5 text-gray-400 flex-shrink-0" />
-                          </div>
-                          {customer.primary_contact && (
-                            <p className="text-sm text-gray-500 dark:text-gray-400">
-                              {customer.primary_contact}
-                            </p>
-                          )}
-                          <div className="flex flex-wrap gap-x-4 gap-y-1 mt-2 text-sm text-gray-500 dark:text-gray-400">
-                            {customer.main_phone && (
-                              <a
-                                href={`tel:${customer.main_phone}`}
-                                onClick={(e) => e.stopPropagation()}
-                                className="flex items-center gap-1 text-green-600 dark:text-green-400"
-                              >
-                                <Phone className="w-3.5 h-3.5" />
-                                {customer.main_phone}
-                              </a>
-                            )}
-                            {customer.main_email && (
-                              <a
-                                href={`mailto:${customer.main_email}`}
-                                onClick={(e) => e.stopPropagation()}
-                                className="flex items-center gap-1 text-blue-600 dark:text-blue-400"
-                              >
-                                <Mail className="w-3.5 h-3.5" />
-                                <span className="truncate max-w-[160px]">
-                                  {customer.main_email}
-                                </span>
-                              </a>
-                            )}
-                            {(customer.city || customer.state) && (
-                              <span className="flex items-center gap-1">
-                                <MapPin className="w-3.5 h-3.5" />
-                                {customer.city}
-                                {customer.city && customer.state && ', '}
-                                {customer.state}
-                              </span>
-                            )}
-                          </div>
-                          {/* Status badges */}
-                          <div className="flex flex-wrap gap-2 mt-2">
-                            {customer.region_name && (
-                              <span className="badge badge-info">
-                                {customer.region_name}
-                              </span>
-                            )}
-                            {customer.pending_reminders_count > 0 && (
-                              <span className="badge badge-warning">
-                                <Bell className="w-3 h-3 mr-1" />
-                                {customer.pending_reminders_count} reminder
-                                {customer.pending_reminders_count !== 1
-                                  ? 's'
-                                  : ''}
-                              </span>
-                            )}
-                            {overdue && (
-                              <span className="badge badge-danger">
-                                Call overdue
-                              </span>
-                            )}
-                          </div>
-                          {customer.current_note && (
-                            <p className="text-xs text-gray-400 dark:text-gray-500 mt-2 truncate">
-                              {customer.current_note.content}
-                            </p>
-                          )}
-                        </div>
-                      </div>
-                    </div>
+                      customer={customer}
+                      onNavigate={() => navigate(`/customers/${customer.id}`)}
+                      overdue={overdue}
+                    />
                   );
                 })}
               </div>
