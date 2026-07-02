@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Region, Customer, Note
+from .models import Region, Customer, Note, Lead
 
 
 class RegionSerializer(serializers.ModelSerializer):
@@ -106,4 +106,25 @@ class CustomerCreateUpdateSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         validated_data['created_by'] = self.context['request'].user
+        return super().create(validated_data)
+
+
+class LeadSerializer(serializers.ModelSerializer):
+    added_date = serializers.DateTimeField(source='created_at', read_only=True)
+
+    class Meta:
+        model = Lead
+        fields = [
+            'id', 'business_name', 'contact_name', 'phone', 'email', 'website',
+            'address', 'city', 'state', 'zip_code', 'type', 'category',
+            'source', 'source_detail', 'score', 'notes', 'status',
+            'services_needed', 'last_contacted', 'converted_customer',
+            'added_date', 'created_at', 'updated_at',
+        ]
+        read_only_fields = ['created_at', 'updated_at', 'converted_customer']
+
+    def create(self, validated_data):
+        request = self.context.get('request')
+        if request and request.user.is_authenticated:
+            validated_data['created_by'] = request.user
         return super().create(validated_data)

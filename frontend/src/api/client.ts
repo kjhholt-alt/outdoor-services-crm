@@ -77,6 +77,18 @@ export const authApi = {
   },
 };
 
+// Company Profile API
+export const companyProfileApi = {
+  get: async () => {
+    const response = await api.get('/auth/company-profile/');
+    return response.data;
+  },
+  update: async (data: Record<string, unknown>) => {
+    const response = await api.patch('/auth/company-profile/', data);
+    return response.data;
+  },
+};
+
 // Customers API
 export const customersApi = {
   list: async (params?: Record<string, string | number>) => {
@@ -396,6 +408,51 @@ export const invoicesApi = {
     const response = await api.post(`/api/invoices/${id}/record_payment/`, { amount });
     return response.data;
   },
+};
+
+// Reports API
+import {
+  monthlyRevenue2025, monthlyRevenue2024, jobsByStatus,
+  revenueByCategory, crewProductivity,
+  totalRevenue as demoTotalRevenue, totalJobs as demoTotalJobs,
+  avgJobValue as demoAvgJobValue, topCategory as demoTopCategory,
+} from '../data/demoReports';
+
+const demoReportsData = {
+  monthly_revenue_current: monthlyRevenue2025,
+  monthly_revenue_previous: monthlyRevenue2024,
+  jobs_by_status: jobsByStatus,
+  revenue_by_category: revenueByCategory,
+  crew_productivity: crewProductivity,
+  summary: {
+    total_revenue: demoTotalRevenue,
+    total_jobs: demoTotalJobs,
+    avg_job_value: demoAvgJobValue,
+    top_category: demoTopCategory,
+  },
+};
+
+export const reportsApi = {
+  getData: async () => withDemo(
+    async () => (await api.get('/api/reports/')).data,
+    demoReportsData,
+  ),
+};
+
+// Leads API
+export const leadsApi = {
+  list: async (params?: Record<string, string | number>) =>
+    (await api.get('/leads/', { params })).data,
+  get: async (id: number) =>
+    (await api.get(`/leads/${id}/`)).data,
+  create: async (data: Record<string, unknown>) =>
+    (await api.post('/leads/', data)).data,
+  update: async (id: number, data: Record<string, unknown>) =>
+    (await api.patch(`/leads/${id}/`, data)).data,
+  delete: async (id: number) =>
+    (await api.delete(`/leads/${id}/`)).data,
+  convertToCustomer: async (id: number) =>
+    (await api.post(`/leads/${id}/convert_to_customer/`)).data,
 };
 
 // Dashboard API (outdoor-specific)

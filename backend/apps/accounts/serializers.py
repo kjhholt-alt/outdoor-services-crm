@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from django.contrib.auth.models import User
-from .models import UserProfile
+from .models import UserProfile, CompanyProfile
 
 
 class UserProfileSerializer(serializers.ModelSerializer):
@@ -37,3 +37,13 @@ class UserSerializer(serializers.ModelSerializer):
             instance.profile.save()
 
         return instance
+
+
+class CompanyProfileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CompanyProfile
+        fields = [
+            'name', 'address', 'phone', 'email',
+            'tax_rate', 'invoice_prefix', 'invoice_terms', 'updated_at',
+        ]
+        read_only_fields = ['updated_at']

@@ -45,6 +45,36 @@ class UserProfile(models.Model):
         return self.weekly_summary_email or self.user.email
 
 
+class CompanyProfile(models.Model):
+    """Singleton company settings for invoices, PDFs, and branding."""
+    name = models.CharField(max_length=255, default='All Around Town Outdoor Services')
+    address = models.CharField(max_length=500, default='Davenport, Iowa')
+    phone = models.CharField(max_length=100, blank=True)
+    email = models.CharField(max_length=255, blank=True)
+    tax_rate = models.DecimalField(max_digits=5, decimal_places=2, default=7.00)
+    invoice_prefix = models.CharField(max_length=20, default='INV-')
+    invoice_terms = models.TextField(
+        default='Payment due within 15 days of invoice date. Late payments subject to 1.5% monthly interest.'
+    )
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = 'Company Profile'
+        verbose_name_plural = 'Company Profile'
+
+    def __str__(self):
+        return self.name
+
+    def save(self, *args, **kwargs):
+        self.pk = 1
+        super().save(*args, **kwargs)
+
+    @classmethod
+    def load(cls):
+        obj, _ = cls.objects.get_or_create(pk=1)
+        return obj
+
+
 @receiver(post_save, sender=User)
 def create_user_profile(sender, instance, created, **kwargs):
     """Create a UserProfile when a new User is created."""

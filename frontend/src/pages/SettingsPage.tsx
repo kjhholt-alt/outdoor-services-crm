@@ -1,34 +1,77 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Settings, Save, Plus, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
-import { serviceCategoriesApi, api } from '../api/client';
+import { serviceCategoriesApi, companyProfileApi, api } from '../api/client';
+import { isDemoMode } from '../data/demo';
 import { Card, CardHeader, CardContent } from '../components/common/Card';
 import { Button } from '../components/common/Button';
 import { Input, TextArea } from '../components/common/Input';
 import { PageTransition } from '../components/common/PageTransition';
 import type { ServiceCategory } from '../types';
 
+const DEFAULT_COMPANY = {
+  name: 'All Around Town Outdoor Services',
+  address: 'Davenport, Iowa',
+  phone: '(563) 555-0100',
+  email: 'info@aatos-qc.com',
+  tax_rate: '7',
+  invoice_prefix: 'INV-',
+  invoice_terms: 'Payment due within 15 days of invoice date. Late payments subject to 1.5% monthly interest.',
+};
+
 export function SettingsPage() {
   const queryClient = useQueryClient();
 
-  // Company info stored in localStorage (could be backend settings model later)
-  const [company, setCompany] = useState(() => {
-    const saved = localStorage.getItem('aatos_company_settings');
-    return saved ? JSON.parse(saved) : {
-      name: 'All Around Town Outdoor Services',
-      address: 'Davenport, Iowa',
-      phone: '(563) 555-0100',
-      email: 'info@aatos-qc.com',
-      taxRate: '7',
-      invoicePrefix: 'INV-',
-      invoiceTerms: 'Payment due within 15 days of invoice date. Late payments subject to 1.5% monthly interest.',
-    };
+  const { data: profileData } = useQuery({
+    queryKey: ['company-profile'],
+    queryFn: async () => {
+      if (isDemoMode) return null;
+      try { return await companyProfileApi.get(); } catch { return null; }
+    },
+    staleTime: 5 * 60_000,
+  });
+
+  const [company, setCompany] = useState(DEFAULT_COMPANY);
+
+  useEffect(() => {
+    if (profileData) {
+      setCompany({
+        name: profileData.name ?? DEFAULT_COMPANY.name,
+        address: profileData.address ?? DEFAULT_COMPANY.address,
+        phone: profileData.phone ?? DEFAULT_COMPANY.phone,
+        email: profileData.email ?? DEFAULT_COMPANY.email,
+        tax_rate: String(profileData.tax_rate ?? DEFAULT_COMPANY.tax_rate),
+        invoice_prefix: profileData.invoice_prefix ?? DEFAULT_COMPANY.invoice_prefix,
+        invoice_terms: profileData.invoice_terms ?? DEFAULT_COMPANY.invoice_terms,
+      });
+    }
+  }, [profileData]);
+
+  const saveMutation = useMutation({
+    mutationFn: (data: Record<string, unknown>) => companyProfileApi.update(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['company-profile'] });
+      toast.success('Company settings saved!');
+    },
+    onError: () => toast.error('Failed to save settings'),
   });
 
   const saveCompanySettings = () => {
-    localStorage.setItem('aatos_company_settings', JSON.stringify(company));
-    toast.success('Company settings saved!');
+    if (isDemoMode) {
+      localStorage.setItem('aatos_company_settings', JSON.stringify(company));
+      toast.success('Company settings saved!');
+      return;
+    }
+    saveMutation.mutate({
+      name: company.name,
+      address: company.address,
+      phone: company.phone,
+      email: company.email,
+      tax_rate: parseFloat(company.tax_rate) || 7,
+      invoice_prefix: company.invoice_prefix,
+      invoice_terms: company.invoice_terms,
+    });
   };
 
   // Service categories
@@ -130,19 +173,19 @@ export function SettingsPage() {
                 label="Default Tax Rate (%)"
                 type="number"
                 step="0.01"
-                value={company.taxRate}
-                onChange={(e) => setCompany({ ...company, taxRate: e.target.value })}
+                value={company.tax_rate}
+                onChange={(e) => setCompany({ ...company, tax_rate: e.target.value })}
               />
               <Input
                 label="Invoice Prefix"
-                value={company.invoicePrefix}
-                onChange={(e) => setCompany({ ...company, invoicePrefix: e.target.value })}
+                value={company.invoice_prefix}
+                onChange={(e) => setCompany({ ...company, invoice_prefix: e.target.value })}
               />
             </div>
             <TextArea
               label="Default Payment Terms"
-              value={company.invoiceTerms}
-              onChange={(e) => setCompany({ ...company, invoiceTerms: e.target.value })}
+              value={company.invoice_terms}
+              onChange={(e) => setCompany({ ...company, invoice_terms: e.target.value })}
               rows={3}
             />
             <Button

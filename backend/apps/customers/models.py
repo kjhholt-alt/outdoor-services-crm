@@ -91,6 +91,70 @@ class Customer(models.Model):
         return '\n'.join(filter(None, parts))
 
 
+class Lead(models.Model):
+    """Pre-customer leads for business development."""
+    TYPE_CHOICES = [
+        ('residential', 'Residential'),
+        ('commercial', 'Commercial'),
+        ('hoa', 'HOA'),
+        ('municipal', 'Municipal'),
+    ]
+    STATUS_CHOICES = [
+        ('new', 'New'),
+        ('contacted', 'Contacted'),
+        ('interested', 'Interested'),
+        ('quoted', 'Quoted'),
+        ('converted', 'Converted'),
+        ('not_interested', 'Not Interested'),
+    ]
+    SOURCE_CHOICES = [
+        ('chamber_of_commerce', 'Chamber of Commerce'),
+        ('new_llc', 'New LLC Filing'),
+        ('building_permits', 'Building Permits'),
+        ('google_maps', 'Google Maps'),
+        ('referral', 'Referral'),
+        ('municipal_rfp', 'Municipal RFP'),
+        ('property_mgmt', 'Property Management'),
+        ('cold_outreach', 'Cold Outreach'),
+        ('news_announcement', 'News / Announcement'),
+    ]
+
+    business_name = models.CharField(max_length=255, db_index=True)
+    contact_name = models.CharField(max_length=255, blank=True)
+    phone = models.CharField(max_length=100, blank=True)
+    email = models.CharField(max_length=255, blank=True)
+    website = models.CharField(max_length=255, blank=True)
+    address = models.CharField(max_length=500, blank=True)
+    city = models.CharField(max_length=100, blank=True)
+    state = models.CharField(max_length=50, blank=True, default='IA')
+    zip_code = models.CharField(max_length=20, blank=True)
+    type = models.CharField(max_length=15, choices=TYPE_CHOICES, default='commercial')
+    category = models.CharField(max_length=255, blank=True)
+    source = models.CharField(max_length=25, choices=SOURCE_CHOICES, default='cold_outreach')
+    source_detail = models.TextField(blank=True)
+    score = models.IntegerField(default=3, help_text='1-5 hot score')
+    notes = models.TextField(blank=True)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='new', db_index=True)
+    services_needed = models.JSONField(default=list, blank=True)
+    last_contacted = models.DateField(null=True, blank=True)
+    converted_customer = models.ForeignKey(
+        'Customer', on_delete=models.SET_NULL, null=True, blank=True, related_name='source_leads'
+    )
+    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-score', '-created_at']
+        indexes = [
+            models.Index(fields=['status', '-score']),
+            models.Index(fields=['city', 'state']),
+        ]
+
+    def __str__(self):
+        return f"{self.business_name} ({self.get_status_display()})"
+
+
 class Note(models.Model):
     """Notes with version history for customers."""
     customer = models.ForeignKey(

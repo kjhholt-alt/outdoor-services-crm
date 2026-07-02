@@ -1,5 +1,6 @@
 import { useState, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   Building2, Mail, MapPin, Search, Filter, Plus,
   TrendingUp, Star, Clock, RefreshCw, Globe,
@@ -10,6 +11,8 @@ import { Card } from '../components/common/Card';
 import { PageTransition } from '../components/common/PageTransition';
 import { Button } from '../components/common/Button';
 import { toast } from 'sonner';
+import { leadsApi } from '../api/client';
+import { isDemoMode } from '../data/demo';
 
 // Lead types
 interface Lead {
@@ -583,7 +586,22 @@ function ScoreStars({ score }: { score: number }) {
 
 export function LeadsPage() {
   const navigate = useNavigate();
-  const [leads, setLeads] = useState<Lead[]>(realLeads);
+  const queryClient = useQueryClient();
+
+  const { data: apiLeads } = useQuery({
+    queryKey: ['leads'],
+    queryFn: async () => {
+      if (isDemoMode) return null;
+      try {
+        const data = await leadsApi.list();
+        return (data?.results ?? data) as Lead[];
+      } catch { return null; }
+    },
+    staleTime: 60_000,
+  });
+
+  const leads: Lead[] = apiLeads && apiLeads.length > 0 ? apiLeads : realLeads;
+
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [typeFilter, setTypeFilter] = useState('');
@@ -625,16 +643,38 @@ export function LeadsPage() {
     hot: leads.filter(l => l.score >= 4).length,
   }), [leads]);
 
+  const statusMutation = useMutation({
+    mutationFn: ({ id, newStatus }: { id: number; newStatus: Lead['status'] }) =>
+      leadsApi.update(id, {
+        status: newStatus,
+        last_contacted: newStatus !== 'new' ? fmt(today) : undefined,
+      }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['leads'] }),
+  });
+
   const handleStatusChange = useCallback((leadId: number, newStatus: Lead['status']) => {
-    setLeads(prev => prev.map(l =>
-      l.id === leadId
-        ? { ...l, status: newStatus, last_contacted: newStatus !== 'new' ? fmt(today) : l.last_contacted }
-        : l
-    ));
+    if (!isDemoMode) {
+      statusMutation.mutate({ id: leadId, newStatus });
+    }
     toast.success(`Lead status updated to "${STATUS_CONFIG[newStatus].label}"`);
-  }, []);
+  }, [statusMutation]);
+
+  const convertMutation = useMutation({
+    mutationFn: (id: number) => leadsApi.convertToCustomer(id),
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['leads'] });
+      queryClient.invalidateQueries({ queryKey: ['customers'] });
+      toast.success('Lead converted to customer!');
+      navigate(`/customers/${data.customer_id}`);
+    },
+    onError: () => toast.error('Failed to convert lead'),
+  });
 
   const handleConvertToCustomer = useCallback((lead: Lead) => {
+    if (!isDemoMode) {
+      convertMutation.mutate(lead.id);
+      return;
+    }
     const params = new URLSearchParams({
       from_lead: 'true',
       business_name: lead.business_name,
@@ -648,15 +688,15 @@ export function LeadsPage() {
       fleet_description: `Services needed: ${lead.services_needed.join(', ')}. ${lead.notes}`,
     });
     navigate(`/customers/new?${params.toString()}`);
-  }, [navigate]);
+  }, [navigate, convertMutation]);
 
   const handleRefresh = useCallback(() => {
     setRefreshing(true);
-    setTimeout(() => {
+    queryClient.invalidateQueries({ queryKey: ['leads'] }).then(() => {
       setRefreshing(false);
       toast.success('Leads refreshed from Chamber directories, Iowa SOS, and local news sources.');
-    }, 1500);
-  }, []);
+    });
+  }, [queryClient]);
 
   return (
     <PageTransition>

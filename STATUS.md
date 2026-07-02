@@ -1,12 +1,11 @@
 # Outdoor CRM (AATOS) - Status
 
-**Last Updated**: 2026-02-13 ~1:50 AM CST
+**Last Updated**: 2026-04-09
 
 ## CLIENT PROJECT — Proposal Ready
 
 **Proposal**: See `PROPOSAL.md` in this directory
 **Pricing tiers**: $500 (code handoff) / $800 (turnkey setup) / $800 + $75-150/mo (ongoing support)
-**Handoff timeline**: 7-10 days from agreement
 
 ## FULLY DEPLOYED - Both Frontend & Backend Live
 
@@ -17,158 +16,94 @@
 | Health Check | PASSING | https://motivated-vitality-production.up.railway.app/health/ |
 | GitHub | LIVE | https://github.com/kjhholt-alt/outdoor-services-crm |
 
-## 8-Feature Enhancement Sprint (COMPLETED 2026-02-13)
+---
 
-All 8 features implemented, built, deployed, and verified with Puppeteer:
+## Production Hardening Sprint (2026-04-09)
 
-### 1. Calendar View (FullCalendar)
-- Month/week/day views on the Jobs page
-- Jobs render as colored events based on service category
-- Click event to view job details
-- Today highlighted, prev/next navigation
-- Dark mode styled
+### Security Fixes
+- **Service catalog permissions** — `ServiceCategoryViewSet` and `ServiceViewSet` now use `ReadOnlyOrAuthenticated`: anon can list/retrieve, auth required for create/update/delete
+- **JWT token blacklist** — Added `rest_framework_simplejwt.token_blacklist` to INSTALLED_APPS + migration. `BLACKLIST_AFTER_ROTATION: True` now actually works
+- **SECRET_KEY** — Raises `RuntimeError` in production (DEBUG=False) if `SECRET_KEY` env var is missing
+- **Dead dependencies removed** — Celery + Redis stripped from requirements.txt and settings.py (were never wired up)
 
-### 2. Weather Integration (OpenWeatherMap)
-- 7-day forecast widget on Dashboard ("7-Day Forecast - Davenport, IA")
-- Bad weather days highlighted red (precipitation >50%)
-- WeatherBadge on job cards warns about rain/snow
-- Uses `VITE_WEATHER_API_KEY` env var; falls back to demo data without it
-- 30-min cache via React Query staleTime
+### Data Integrity
+- **Dashboard monthly_revenue** — Replaced `timedelta(days=i*30)` with real calendar month boundaries
+- **Estimate → Job service matching** — Now matches by `service_id` first, falls back to name lookup
 
-### 3. Crew Mobile View (/crew)
-- Simplified mobile-first layout (no sidebar, green top bar)
-- Today's jobs sorted by time, "Next Up" preview card
-- Large 56px touch-target buttons for Start/Complete
-- Google Maps navigation links, tel: phone links
-- Accessible at `/crew` — separate from main CRM layout
+### Email
+- **Production email backend** — `EMAIL_BACKEND` auto-switches from console (DEBUG) to SMTP (production)
 
-### 4. Photo Documentation (IndexedDB)
-- Before/after photo capture via device camera
-- GPS geolocation stamped on each photo
-- Photos stored offline in IndexedDB (works without backend)
-- Photo gallery with before/after grouping per job
-- Fullscreen viewer with metadata and delete
-- Camera button on every job card in Jobs page
+### Reports API (NEW)
+- **`GET /api/reports/`** — Returns monthly revenue (current + previous year), jobs by status, revenue by category, crew productivity, summary stats
+- **ReportsPage wired to live API** — Uses React Query with demo data fallback. Loading skeleton while fetching
 
-### 5. Reports & Analytics (Recharts)
-- 5 interactive charts: Revenue Trend (line), Jobs by Status (donut), Revenue by Category (bar), Seasonal Trends (area), Crew Productivity (horizontal bar)
-- 4 summary stat cards (Total Revenue, Total Jobs, Avg Job Value, Top Category)
-- Date range selector: Month / Quarter / Year / All
-- Seasonal data realistic for Davenport outdoor services (peaks Jun-Sep)
+### Leads Backend (NEW)
+- **Lead model** — `apps.customers.models.Lead` with fields: business_name, contact_name, phone, email, address, type, source, score, status, services_needed (JSON), convert_to_customer action
+- **`/leads/` API** — Full CRUD with search/filter by status, type, source, city. `POST /leads/{id}/convert_to_customer/` creates a Customer and marks lead as converted
+- **LeadsPage wired to API** — React Query with demo fallback. Status changes and conversions call the API when not in demo mode
 
-### 6. PDF Invoice Generation (jsPDF)
-- Professional PDF with AATOS green header, company info, Davenport IA
-- Bill-to section, line items table via jspdf-autotable
-- Subtotal / tax / total / payment status
-- "Download PDF" button + HTML preview modal on each invoice
-- "Thank you for your business" footer
+### Company Profile (NEW)
+- **CompanyProfile model** — Singleton at `apps.accounts.models.CompanyProfile` (pk=1, get_or_create). Fields: name, address, phone, email, tax_rate, invoice_prefix, invoice_terms
+- **`/auth/company-profile/` API** — GET/PATCH
+- **SettingsPage wired to API** — Loads from API, saves via PATCH. Falls back to localStorage in demo mode
 
-### 7. Toast Notifications (Sonner)
-- Success/error toasts on job start, job complete, payment recording
-- Bottom-right on desktop, top-center on mobile
-- Respects dark mode
-- Helper hooks: showSuccess(), showError(), showWarning(), showInfo()
+### Backend Test Suite (NEW) — 51 tests
+- **Auth**: Login, bad password, token refresh, /me requires auth, toggle dark mode
+- **Company Profile**: GET creates default, PATCH updates, singleton behavior, auth required
+- **Customers**: CRUD, soft delete, search
+- **Notes**: Add, list, version history (new note marks previous not-current)
+- **Leads**: CRUD, filter by status, search, convert to customer, double-convert blocked
+- **Services**: Anon read OK, anon write blocked, auth write OK
+- **Jobs**: CRUD, start/complete status transitions, reschedule, today filter, auth required
+- **Estimates**: Create, accept creates jobs
+- **Invoices**: Auto-number, partial payment, full payment, outstanding/overdue filters, balance_due property
+- **Dashboard**: Returns expected shape, handles empty DB
+- **Reports**: Returns expected shape, auth required
 
-### 8. UI Overhaul (Framer Motion) + Form Pages + Market Leads
-- Page transitions (fade-in-up) on all 14 pages
-- Card hover animations, button press feedback (whileTap scale)
-- Modal enter/exit animations (backdrop fade + slide-up)
-- Skeleton loading components (card, text, chart variants)
-- Sidebar active state: green left border accent
-- Refined dark mode with smoother transitions
+### Frontend Test Suite (NEW) — 7 smoke tests
+- Vitest + Testing Library + jsdom configured
+- Login, Dashboard, Reports, Leads, Invoices page smoke tests
+- `npm test` script added to package.json
 
-### 9. Form Pages (Job, Estimate, Invoice)
-- `/jobs/new` — Schedule New Job form with customer/service dropdowns, auto-fill price/duration, date/time, assigned crew, notes
-- `/estimates/new` — New Estimate form with dynamic line items (add/remove), running total, frequency, valid-until date
-- `/invoices/new` — New Invoice form with customer picker, attach completed jobs, live tax calculator (subtotal/tax/total), auto-set due date 15 days out
-- All forms use the same Card/Input/Button pattern as CustomerFormPage
-- Toast notifications on success/error
+### Invoice Fixes (VERIFIED)
+- **`jobs` field** — Frontend sends `jobs: [...]` and serializer accepts it correctly (was flagged as `job_ids` in old audit — already fixed)
+- **Auto-number** — `Invoice.save()` override generates `INV-YYYY-NNNN` correctly
 
-### 10. Market Leads / Lead Generator (/leads)
-- 12 demo leads for Davenport/Bettendorf/QC area — new businesses, new builds, HOAs, municipal RFPs
-- Each lead has: business name, contact name, phone, email, address, type (Residential/Commercial/HOA/Municipal), service category, lead source, hot score (1-5 stars), notes, status
-- Stats dashboard: Total Leads, New/Uncontacted, Hot Leads, Est. Pipeline Value
-- Search + filter by status, type, sort by hot score/date/name
-- Call (tel:), Email (mailto:), Convert to Customer buttons per lead
-- Lead sources: Google Maps new listings, building permits, referrals, Yelp, Nextdoor, Chamber of Commerce, municipal RFPs, cold outreach, Facebook ads
+---
 
-## New Dependencies Added
+## Previous: 8-Feature Enhancement Sprint (COMPLETED 2026-02-13)
 
-| Package | Version | Purpose |
-|---------|---------|---------|
-| recharts | ^2.x | Charts & data visualization |
-| jspdf | ^2.x | PDF generation |
-| jspdf-autotable | ^3.x | PDF table formatting |
-| framer-motion | ^11.x | Animations & transitions |
-| sonner | ^1.x | Toast notifications |
-| @fullcalendar/react | ^6.x | Calendar component |
-| @fullcalendar/daygrid | ^6.x | Month/day grid view |
-| @fullcalendar/timegrid | ^6.x | Week/day time view |
-| @fullcalendar/interaction | ^6.x | Click/drag events |
-| @fullcalendar/core | ^6.x | Calendar core |
+All 8 features implemented, built, deployed, and verified:
 
-### 11. Customer Page Redesign
-- **CustomersPage.tsx**: Full rewrite with avatar initials, status indicators, demo mode fix
-  - Color-coded initials avatars (2-letter) for each customer
-  - Status badges: "On track" (green), "X reminders" (amber), "Call overdue" (red)
-  - "N need attention" counter in header
-  - Clickable phone (tel:) and email (mailto:) links on mobile cards
-  - Fixed critical bug: demo mode returned flat arrays but page expected PaginatedResponse
-  - Client-side search and sort for demo mode
-  - Skeleton loading states instead of spinner
-  - Better empty state with icon and "Add Customer" CTA
-- **CustomerDetailPage.tsx**: Full rewrite with quick stats, better contact info, PageTransition
-  - Large avatar initials with colored background
-  - Quick stats row: completed jobs, total revenue, activities logged, outstanding balance
-  - Clickable phone, email, address (Google Maps link)
-  - "Call Now" button in sidebar
-  - Current note highlighted in green card
-  - Activity timeline with vertical connectors
-  - Reminder cards with overdue/today color coding
-  - Customer Info card (added date, added by, last updated)
-  - Toast notifications on note and activity mutations
-- **Demo data**: Added full Customer detail objects, demo activities, API overrides for get/getActivities/getReminders
-
-## Files Changed
-
-- **34 new files** created (components, hooks, types, data, lib, form pages, leads)
-- **21 files modified** (all pages + common components + App.tsx + Layout.tsx)
-- Total: 4,538 insertions across 2 commits + 1,187 insertions in customer redesign
+1. Calendar View (FullCalendar)
+2. Weather Integration (OpenWeatherMap)
+3. Crew Mobile View (/crew)
+4. Photo Documentation (IndexedDB)
+5. Reports & Analytics (Recharts)
+6. PDF Invoice Generation (jsPDF)
+7. Toast Notifications (Sonner)
+8. UI Overhaul (Framer Motion) + Form Pages + Market Leads
+9. Customer Page Redesign
 
 ## What's Working
 
-- **Frontend** (Vercel): All 16 pages render correctly, SPA routing, dark mode, mobile responsive
-- **Form Pages**: /jobs/new, /estimates/new, /invoices/new all work — no more redirect-to-home
-- **Market Leads**: /leads page with 12 QC-area demo leads, search/filter, call/email/convert buttons
+- **Frontend** (Vercel): All 16+ pages render correctly, SPA routing, dark mode, mobile responsive
 - **Backend** (Railway): Django 5 + DRF, PostgreSQL, gunicorn — health check returns 200
-- **Service Catalog**: 5 categories, 24 services seeded from management command
-- **API Endpoints**: categories, services, jobs, estimates, invoices, dashboard summary — all working
-- **Frontend connected to backend**: `VITE_API_URL` set on Vercel, builds pull real data
-- **Demo data fallback**: If backend goes down, frontend shows sample data automatically (including customer detail, activities, reminders)
-- **Customer Pages**: Redesigned with avatar initials, status indicators, quick stats, skeleton loading, Google Maps links
-- **Calendar**: FullCalendar renders on Jobs page with month/week/day views
-- **Weather**: 7-day forecast on Dashboard, badges on job cards
-- **Crew View**: Mobile-optimized at /crew with no sidebar
-- **Photos**: Camera capture + IndexedDB storage + gallery viewer
-- **Reports**: 5 Recharts visualizations with date filtering
-- **PDF Invoices**: jsPDF generation with professional AATOS branding
-- **Toasts**: Sonner notifications on all mutations
-- **Animations**: Framer Motion page transitions + component animations
+- **Auth enforced**: JWT auth with ProtectedRoute on frontend, IsAuthenticated default on backend
+- **Service Catalog**: 5 categories, 24 services. Public read, auth-protected write
+- **Reports**: Live API data with demo fallback, 5 chart types, date range filtering
+- **Leads**: Backend-persisted with full CRUD, search/filter, convert-to-customer flow
+- **Company Settings**: Server-persisted via CompanyProfile model
+- **Invoice auto-numbering**: INV-YYYY-NNNN format on backend
+- **Demo mode**: Full offline experience when no backend configured
+- **Test suites**: 51 backend + 7 frontend tests
 
 ## What's Not Working / Pending
 
-- **No custom domain yet**: Currently on `outdoor-services-crm.vercel.app`
-- **Auth not enforced**: JWT auth endpoints exist in backend but frontend doesn't require login
-- **No real customer data yet**: Service catalog is seeded, but customers/jobs/invoices are empty (need to be created or imported)
-- **Weather API key not set on Vercel**: Using demo forecast data. Add `VITE_WEATHER_API_KEY` with a free OpenWeatherMap key for live weather.
-
-## Next Steps
-
-1. Import real customer data via the Import/Export page
-2. Create first jobs and invoices to see all features in action
-3. Add `VITE_WEATHER_API_KEY` env var on Vercel for live weather
-4. Add custom domain if desired
-5. Enable JWT auth if multi-user access needed
+- **Photos**: Stored in IndexedDB only (no server upload yet)
+- **Recurring jobs**: Model fields exist but no auto-generation engine
+- **Weather API key**: Using demo data without `VITE_WEATHER_API_KEY`
+- **No custom domain**: Currently on `outdoor-services-crm.vercel.app`
 
 ## Architecture
 
@@ -177,21 +112,7 @@ Frontend (Vercel)                    Backend (Railway)
 React 19 + Vite + TypeScript        Django 5 + DRF
 Tailwind CSS + Framer Motion         PostgreSQL (Railway addon)
 React Query + FullCalendar           gunicorn + WhiteNoise
-Recharts + jsPDF + Sonner
+Recharts + jsPDF + Sonner            SimpleJWT + token blacklist
+Vitest + Testing Library             51 Django tests
 outdoor-services-crm.vercel.app      motivated-vitality-production.up.railway.app
 ```
-
-## Railway Project
-
-- **Project**: beautiful-quietude
-- **Service**: motivated-vitality
-- **Database**: PostgreSQL (auto-provisioned)
-- **Environment**: production
-- **Start command**: migrate -> collectstatic -> seed_services -> gunicorn
-
-## Branding
-
-- **Company**: All Around Town Outdoor Services (AATOS)
-- **Location**: Davenport, Iowa
-- **Colors**: Forest green (#16a34a) primary
-- **Logo**: TreePine icon in green circle

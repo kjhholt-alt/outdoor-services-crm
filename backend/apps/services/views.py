@@ -1,6 +1,6 @@
 from rest_framework import viewsets, status, filters
 from rest_framework.decorators import action, api_view, permission_classes as perm_classes
-from rest_framework.permissions import IsAuthenticated, AllowAny
+from rest_framework.permissions import IsAuthenticated, AllowAny, SAFE_METHODS, BasePermission
 from rest_framework.response import Response
 from django_filters.rest_framework import DjangoFilterBackend
 from django.utils import timezone
@@ -15,8 +15,16 @@ from .serializers import (
 )
 
 
+class ReadOnlyOrAuthenticated(BasePermission):
+    """Allow unauthenticated read access; require auth for writes."""
+    def has_permission(self, request, view):
+        if request.method in SAFE_METHODS:
+            return True
+        return request.user and request.user.is_authenticated
+
+
 class ServiceCategoryViewSet(viewsets.ModelViewSet):
-    permission_classes = [AllowAny]
+    permission_classes = [ReadOnlyOrAuthenticated]
     queryset = ServiceCategory.objects.filter(is_active=True)
     serializer_class = ServiceCategorySerializer
     pagination_class = None
@@ -26,7 +34,7 @@ class ServiceCategoryViewSet(viewsets.ModelViewSet):
 
 
 class ServiceViewSet(viewsets.ModelViewSet):
-    permission_classes = [AllowAny]
+    permission_classes = [ReadOnlyOrAuthenticated]
     queryset = Service.objects.filter(is_active=True).select_related('category')
     serializer_class = ServiceSerializer
     filter_backends = [DjangoFilterBackend, filters.SearchFilter]
@@ -141,7 +149,11 @@ class EstimateViewSet(viewsets.ModelViewSet):
         created_jobs = []
         if request.data.get('create_jobs', True):
             for item in estimate.line_items:
-                service = Service.objects.filter(name=item.get('service')).first()
+                service = None
+                if item.get('service_id'):
+                    service = Service.objects.filter(id=item['service_id']).first()
+                if not service and item.get('service'):
+                    service = Service.objects.filter(name=item['service']).first()
                 if service:
                     job = Job.objects.create(
                         customer=estimate.customer,
@@ -252,10 +264,17 @@ def dashboard_summary(request):
     )
     overdue_amount = (overdue_total['total'] or 0) - (overdue_total['paid'] or 0)
 
-    # Monthly revenue (last 12 months)
+    # Monthly revenue (last 12 months) using real calendar months
     monthly_revenue = []
+    current_month_start = today.replace(day=1)
     for i in range(11, -1, -1):
-        m_start = (today.replace(day=1) - timedelta(days=i * 30)).replace(day=1)
+        # Walk back i months from the current month
+        month = current_month_start.month - i
+        year = current_month_start.year
+        while month <= 0:
+            month += 12
+            year -= 1
+        m_start = current_month_start.replace(year=year, month=month, day=1)
         if m_start.month == 12:
             m_end = m_start.replace(year=m_start.year + 1, month=1)
         else:
@@ -295,4 +314,124 @@ def dashboard_summary(request):
             'overdue_amount': float(overdue_amount),
         },
         'monthly_revenue': monthly_revenue,
+    })
+
+
+@api_view(['GET'])
+@perm_classes([IsAuthenticated])
+def reports_data(request):
+    """Full reports data: monthly revenue, jobs by status, revenue by category, crew productivity."""
+    today = timezone.now().date()
+    current_year = today.year
+    prev_year = current_year - 1
+
+    STATUS_COLORS = {
+        'completed': '#16a34a',
+        'scheduled': '#3b82f6',
+        'in_progress': '#f59e0b',
+        'cancelled': '#6b7280',
+        'rescheduled': '#8b5cf6',
+        'weather_delay': '#0ea5e9',
+    }
+    STATUS_LABELS = {
+        'completed': 'Completed',
+        'scheduled': 'Scheduled',
+        'in_progress': 'In Progress',
+        'cancelled': 'Cancelled',
+        'rescheduled': 'Rescheduled',
+        'weather_delay': 'Weather Delay',
+    }
+
+    def _monthly_revenue_for_year(year):
+        """Build per-month revenue + job counts for a given year."""
+        from datetime import date
+        months = []
+        for m in range(1, 13):
+            m_start = date(year, m, 1)
+            if m == 12:
+                m_end = date(year + 1, 1, 1)
+            else:
+                m_end = date(year, m + 1, 1)
+            qs = Job.objects.filter(
+                scheduled_date__gte=m_start,
+                scheduled_date__lt=m_end,
+                status='completed',
+            )
+            rev = qs.aggregate(total=Sum('price'))['total'] or 0
+            months.append({
+                'month': m_start.strftime('%b'),
+                'revenue': float(rev),
+                'jobs': qs.count(),
+            })
+        return months
+
+    monthly_current = _monthly_revenue_for_year(current_year)
+    monthly_prev = _monthly_revenue_for_year(prev_year)
+
+    # Jobs by status
+    status_counts = (
+        Job.objects.values('status')
+        .annotate(count=Count('id'))
+        .order_by('-count')
+    )
+    jobs_by_status = [
+        {
+            'status': STATUS_LABELS.get(row['status'], row['status']),
+            'count': row['count'],
+            'color': STATUS_COLORS.get(row['status'], '#9ca3af'),
+        }
+        for row in status_counts
+    ]
+
+    # Revenue by service category
+    category_revenue = (
+        Job.objects.filter(status='completed')
+        .values('service__category__name', 'service__category__color')
+        .annotate(revenue=Sum('price'))
+        .order_by('-revenue')
+    )
+    revenue_by_category = [
+        {
+            'category': row['service__category__name'],
+            'revenue': float(row['revenue']),
+            'color': row['service__category__color'] or '#6366f1',
+        }
+        for row in category_revenue
+    ]
+
+    # Crew productivity (by assigned_to)
+    crew_stats = (
+        Job.objects.filter(status='completed')
+        .exclude(assigned_to='')
+        .values('assigned_to')
+        .annotate(jobs=Count('id'), revenue=Sum('price'))
+        .order_by('-jobs')
+    )
+    crew_productivity = [
+        {
+            'name': row['assigned_to'],
+            'jobs': row['jobs'],
+            'revenue': float(row['revenue']),
+        }
+        for row in crew_stats
+    ]
+
+    # Summary stats
+    total_revenue = sum(m['revenue'] for m in monthly_current)
+    total_jobs = sum(m['jobs'] for m in monthly_current)
+    avg_job_value = round(total_revenue / total_jobs) if total_jobs > 0 else 0
+    top_category = revenue_by_category[0]['category'] if revenue_by_category else 'N/A'
+
+    return Response({
+        'monthly_revenue_current': monthly_current,
+        'monthly_revenue_previous': monthly_prev,
+        'jobs_by_status': jobs_by_status,
+        'revenue_by_category': revenue_by_category,
+        'crew_productivity': crew_productivity,
+        'summary': {
+            'total_revenue': total_revenue,
+            'total_jobs': total_jobs,
+            'avg_job_value': avg_job_value,
+            'top_category': top_category,
+        },
     })

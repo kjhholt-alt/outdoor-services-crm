@@ -3,13 +3,15 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from django_filters.rest_framework import DjangoFilterBackend
 from django.db.models import Q
-from .models import Region, Customer, Note
+from django.utils import timezone
+from .models import Region, Customer, Note, Lead
 from .serializers import (
     RegionSerializer,
     CustomerListSerializer,
     CustomerDetailSerializer,
     CustomerCreateUpdateSerializer,
     NoteSerializer,
+    LeadSerializer,
 )
 
 
@@ -105,3 +107,43 @@ class CustomerViewSet(viewsets.ModelViewSet):
         reminders = customer.reminders.filter(status='pending')
         serializer = ReminderSerializer(reminders, many=True)
         return Response(serializer.data)
+
+
+class LeadViewSet(viewsets.ModelViewSet):
+    """API endpoint for leads / business development prospects."""
+    queryset = Lead.objects.all()
+    serializer_class = LeadSerializer
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    filterset_fields = ['status', 'type', 'source', 'city']
+    search_fields = ['business_name', 'contact_name', 'category', 'city', 'address']
+    ordering_fields = ['score', 'created_at', 'business_name']
+    ordering = ['-score', '-created_at']
+
+    @action(detail=True, methods=['post'])
+    def convert_to_customer(self, request, pk=None):
+        """Convert a lead into a Customer record."""
+        lead = self.get_object()
+        if lead.status == 'converted' and lead.converted_customer:
+            return Response(
+                {'error': 'Lead already converted', 'customer_id': lead.converted_customer_id},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        customer = Customer.objects.create(
+            business_name=lead.business_name,
+            primary_contact=lead.contact_name,
+            main_phone=lead.phone,
+            main_email=lead.email,
+            bill_to_address=lead.address,
+            city=lead.city,
+            state=lead.state,
+            zip_code=lead.zip_code,
+            fleet_description=f"Services needed: {', '.join(lead.services_needed)}. {lead.notes}".strip(),
+            created_by=request.user,
+        )
+        lead.status = 'converted'
+        lead.converted_customer = customer
+        lead.save()
+        return Response({
+            'lead': LeadSerializer(lead).data,
+            'customer_id': customer.id,
+        }, status=status.HTTP_201_CREATED)

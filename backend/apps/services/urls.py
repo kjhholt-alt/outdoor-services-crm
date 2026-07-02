@@ -3,7 +3,7 @@ from rest_framework.routers import DefaultRouter
 from .views import (
     ServiceCategoryViewSet, ServiceViewSet,
     JobViewSet, EstimateViewSet, InvoiceViewSet,
-    dashboard_summary,
+    dashboard_summary, reports_data,
 )
 
 router = DefaultRouter()
@@ -15,5 +15,6 @@ router.register(r'invoices', InvoiceViewSet)
 
 urlpatterns = [
     path('dashboard/summary/', dashboard_summary, name='dashboard-summary'),
+    path('reports/', reports_data, name='reports-data'),
     path('', include(router.urls)),
 ]

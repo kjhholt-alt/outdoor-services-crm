@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { DollarSign, Briefcase, TrendingUp, Award } from 'lucide-react';
 import { Card, CardHeader, CardContent } from '../components/common/Card.tsx';
 import { PageTransition } from '../components/common/PageTransition';
@@ -7,17 +8,8 @@ import { JobsByStatusChart } from '../components/reports/JobsByStatusChart.tsx';
 import { RevenueByCategoryChart } from '../components/reports/RevenueByCategoryChart.tsx';
 import { SeasonalTrendsChart } from '../components/reports/SeasonalTrendsChart.tsx';
 import { CrewProductivityChart } from '../components/reports/CrewProductivityChart.tsx';
-import {
-  monthlyRevenue2025,
-  monthlyRevenue2024,
-  jobsByStatus,
-  revenueByCategory,
-  crewProductivity,
-  totalRevenue,
-  totalJobs,
-  avgJobValue,
-  topCategory,
-} from '../data/demoReports.ts';
+import { reportsApi } from '../api/client';
+import type { MonthlyRevenue } from '../data/demoReports';
 
 type DateRange = 'month' | 'quarter' | 'year' | 'all';
 
@@ -38,14 +30,27 @@ function filterByRange<T>(data: T[], range: DateRange): T[] {
 export function ReportsPage() {
   const [range, setRange] = useState<DateRange>('all');
 
+  const { data: reports, isLoading } = useQuery({
+    queryKey: ['reports'],
+    queryFn: () => reportsApi.getData(),
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const monthlyRevenueCurrent: MonthlyRevenue[] = reports?.monthly_revenue_current ?? [];
+  const monthlyRevenuePrevious: MonthlyRevenue[] = reports?.monthly_revenue_previous ?? [];
+  const jobsByStatus = reports?.jobs_by_status ?? [];
+  const revenueByCategory = reports?.revenue_by_category ?? [];
+  const crewProductivity = reports?.crew_productivity ?? [];
+  const summary = reports?.summary ?? { total_revenue: 0, total_jobs: 0, avg_job_value: 0, top_category: 'N/A' };
+
   const filteredRevenue = useMemo(
-    () => filterByRange(monthlyRevenue2025, range),
-    [range],
+    () => filterByRange(monthlyRevenueCurrent, range),
+    [monthlyRevenueCurrent, range],
   );
 
-  const filteredRevenue2024 = useMemo(
-    () => filterByRange(monthlyRevenue2024, range),
-    [range],
+  const filteredRevenuePrev = useMemo(
+    () => filterByRange(monthlyRevenuePrevious, range),
+    [monthlyRevenuePrevious, range],
   );
 
   const filteredTotal = useMemo(
@@ -67,10 +72,25 @@ export function ReportsPage() {
     { key: 'all', label: 'All' },
   ];
 
+  if (isLoading) {
+    return (
+      <PageTransition>
+        <div className="space-y-6">
+          <div className="h-8 w-48 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            {[...Array(4)].map((_, i) => (
+              <div key={i} className="h-20 bg-gray-200 dark:bg-gray-700 rounded-xl animate-pulse" />
+            ))}
+          </div>
+          <div className="h-64 bg-gray-200 dark:bg-gray-700 rounded-xl animate-pulse" />
+        </div>
+      </PageTransition>
+    );
+  }
+
   return (
     <PageTransition>
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Reports</h1>
@@ -89,7 +109,6 @@ export function ReportsPage() {
         </div>
       </div>
 
-      {/* Summary stat cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <Card>
           <div className="flex items-center gap-3">
@@ -99,7 +118,7 @@ export function ReportsPage() {
             <div>
               <p className="text-sm text-gray-500 dark:text-gray-400">Total Revenue</p>
               <p className="text-xl font-bold text-gray-900 dark:text-white">
-                ${(range === 'all' ? totalRevenue : filteredTotal).toLocaleString()}
+                ${(range === 'all' ? summary.total_revenue : filteredTotal).toLocaleString()}
               </p>
             </div>
           </div>
@@ -113,7 +132,7 @@ export function ReportsPage() {
             <div>
               <p className="text-sm text-gray-500 dark:text-gray-400">Total Jobs</p>
               <p className="text-xl font-bold text-gray-900 dark:text-white">
-                {range === 'all' ? totalJobs : filteredJobs}
+                {range === 'all' ? summary.total_jobs : filteredJobs}
               </p>
             </div>
           </div>
@@ -127,7 +146,7 @@ export function ReportsPage() {
             <div>
               <p className="text-sm text-gray-500 dark:text-gray-400">Avg Job Value</p>
               <p className="text-xl font-bold text-gray-900 dark:text-white">
-                ${range === 'all' ? avgJobValue : filteredAvg}
+                ${range === 'all' ? summary.avg_job_value : filteredAvg}
               </p>
             </div>
           </div>
@@ -140,13 +159,12 @@ export function ReportsPage() {
             </div>
             <div>
               <p className="text-sm text-gray-500 dark:text-gray-400">Top Category</p>
-              <p className="text-xl font-bold text-gray-900 dark:text-white">{topCategory}</p>
+              <p className="text-xl font-bold text-gray-900 dark:text-white">{summary.top_category}</p>
             </div>
           </div>
         </Card>
       </div>
 
-      {/* Revenue trend - full width */}
       <Card>
         <CardHeader title="Revenue Trend" subtitle="Monthly revenue over time" />
         <CardContent>
@@ -154,7 +172,6 @@ export function ReportsPage() {
         </CardContent>
       </Card>
 
-      {/* Second row: Jobs by Status + Revenue by Category */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card>
           <CardHeader title="Jobs by Status" subtitle="All-time job breakdown" />
@@ -171,12 +188,11 @@ export function ReportsPage() {
         </Card>
       </div>
 
-      {/* Third row: Seasonal Trends + Crew Productivity */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card>
-          <CardHeader title="Seasonal Trends" subtitle="2025 vs 2024 comparison" />
+          <CardHeader title="Seasonal Trends" subtitle="Current year vs previous year" />
           <CardContent>
-            <SeasonalTrendsChart data2025={filteredRevenue} data2024={filteredRevenue2024} />
+            <SeasonalTrendsChart data2025={filteredRevenue} data2024={filteredRevenuePrev} />
           </CardContent>
         </Card>
 
